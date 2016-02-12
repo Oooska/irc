@@ -196,7 +196,7 @@ func (l *lexer) scanEOL() (Token, string) {
 	if isEOL(l.peak()) {
 		buf.WriteByte(l.next())
 		if isEOL(l.peak()) {
-			buf.WriteByte(l.peak())
+			buf.WriteByte(l.next())
 		}
 	}
 	return tokenEOL, buf.String()
