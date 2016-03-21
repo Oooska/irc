@@ -57,7 +57,7 @@ type lexer struct {
 	s *bufio.Reader
 
 	bufTokens  []Token
-	bufLiteral []string
+	bufLiteral [][]byte
 }
 
 func newLexer(r io.Reader) *lexer {
@@ -65,7 +65,7 @@ func newLexer(r io.Reader) *lexer {
 }
 
 //Scan() returns the next token, and the actual string value
-func (l *lexer) NextItem() (token Token, literal string) {
+func (l *lexer) NextItem() (token Token, literal []byte) {
 	//ch, _, _ := l.next()
 	if len(l.bufTokens) == 0 {
 		l.tokenizeNextMessage()
@@ -80,7 +80,7 @@ func (l *lexer) NextItem() (token Token, literal string) {
 	} else {
 		//No tokens to read from. Return nul byte
 		token = tokenIllegal
-		literal = string(byteNUL)
+		literal = []byte{byteNUL}
 	}
 	return
 }
@@ -100,7 +100,7 @@ func (l *lexer) peak() byte {
 	return ch
 }
 
-func (l *lexer) addToken(token Token, literal string) {
+func (l *lexer) addToken(token Token, literal []byte) {
 	l.bufTokens = append(l.bufTokens, token)
 	l.bufLiteral = append(l.bufLiteral, literal)
 }
@@ -110,22 +110,24 @@ func (l *lexer) addToken(token Token, literal string) {
 func (l *lexer) tokenizeNextMessage() {
 	//MESSAGE ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
 	if l.peak() == ':' {
-		l.addToken(tokenColon, string(l.next()))
+		l.addToken(tokenColon, []byte{l.next()})
 		l.addToken(tokenPrefix, l.scanChstring())
 		l.addToken(l.scanSpaces())
 	}
 
 	//Parse message
 	l.addToken(tokenCommand, l.scanChstring())
-	l.addToken(l.scanSpaces())
+	if l.peak() == ' ' {
+		l.addToken(l.scanSpaces())
+	}
 
 	//Parse params
 	for {
-		if l.peak() == ':' {
-			l.addToken(tokenColon, string(l.next()))
+		if ch := l.peak(); ch == ':' {
+			l.addToken(tokenColon, []byte{l.next()})
 			l.addToken(l.scanTrailing())
 			break
-		} else if isEOL(l.peak()) {
+		} else if isEOL(ch) {
 			break
 		} else {
 			param := l.scanWord()
@@ -139,39 +141,38 @@ func (l *lexer) tokenizeNextMessage() {
 
 //Reads a chstring
 //<chstring> ::= <any 8bit code except SPACE, BELL, NUL, CR, LF and (',')>)
-func (l *lexer) scanChstring() string {
+func (l *lexer) scanChstring() []byte {
 	var buf bytes.Buffer
 	for {
-		if ch := l.next(); isChchar(ch) {
-			buf.WriteByte(ch)
+		if isChchar(l.peak()) {
+			buf.WriteByte(l.next())
 		} else {
-			l.unread()
-			return buf.String()
+			return buf.Bytes()
 		}
 	}
 }
 
 //Scans until encountering CRLF, or NUL
-func (l *lexer) scanTrailing() (Token, string) {
+func (l *lexer) scanTrailing() (Token, []byte) {
 	var buf bytes.Buffer
 	for {
 		if ch := l.next(); ch != byteCR && ch != byteLF && ch != byteNUL {
 			buf.WriteByte(ch)
 		} else {
 			l.unread()
-			return tokenTrailing, buf.String()
+			return tokenTrailing, buf.Bytes()
 		}
 	}
 }
 
 //Scans the next string until whitespace is encountered
-func (l *lexer) scanWord() string {
+func (l *lexer) scanWord() []byte {
 	var buf bytes.Buffer
 	for {
 		if isNonwhite(l.peak()) {
 			buf.WriteByte(l.next())
 		} else {
-			return buf.String()
+			return buf.Bytes()
 		}
 	}
 }
@@ -179,19 +180,19 @@ func (l *lexer) scanWord() string {
 //Consumes spaces (0x20) until the next non-space character
 //Returns tokenSpace, and a string containing the same
 //number of space characters consumed.
-func (l *lexer) scanSpaces() (Token, string) {
+func (l *lexer) scanSpaces() (Token, []byte) {
 	var buf bytes.Buffer
 	for {
 		if l.peak() == ' ' {
 			buf.WriteByte(l.next())
 		} else {
-			return tokenSpace, buf.String()
+			return tokenSpace, buf.Bytes()
 		}
 	}
 }
 
 //Scans EOL characters (\r\n)
-func (l *lexer) scanEOL() (Token, string) {
+func (l *lexer) scanEOL() (Token, []byte) {
 	var buf bytes.Buffer
 	if isEOL(l.peak()) {
 		buf.WriteByte(l.next())
@@ -199,7 +200,7 @@ func (l *lexer) scanEOL() (Token, string) {
 			buf.WriteByte(l.next())
 		}
 	}
-	return tokenEOL, buf.String()
+	return tokenEOL, buf.Bytes()
 }
 
 /*BNF From: tools.ietf.org/html/rfc1459#section-2.3.1

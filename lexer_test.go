@@ -8,11 +8,12 @@ import (
 var input = "PING :tepper.freenode.net\r\n" +
 	":tepper.freenode.net 332 goirctest #mainehackerclub :MHC@MSF - 3-18-2016 @ Bangor Y 4-8PM\r\n" +
 	":tepper.freenode.net 353 goirctest = #mainehackerclub :goirctest +ubuntuguru " +
-	"+FatalNIX MaineHackerBot +hpcr2013 +T-800 +infina Oooska +AaronBallman " +
-	"@Derrick[afk] dual +Church- +arschmitz +wrexem +powellc +jeepingben +nh_99 " +
-	"+zgrep lambdabot +jrvc\r\n" +
-	":wallyworld!~quassel@5-5-5-5.static.tpgi.com.au  QUIT :Remote host closed the connection\r\n" +
-	":KirkMcDonald!~Kirk@python/site-packages/KirkMcDonald PRIVMSG #go-nuts :https://golang.org/pkg/time/#Time.String\r\n"
+	/*  */ "+FatalNIX MaineHackerBot +hpcr2013 +T-800 +infina Oooska +AaronBallman " +
+	/*  */ "@Derrick[afk] dual +Church- +arschmitz +wrexem +powellc +jeepingben +nh_99 " +
+	/*  */ "+zgrep lambdabot +jrvc\r\n" +
+	":wallyworld!~quassel@1-2-3-4.static.tpgi.com.au  QUIT :Remote host closed the connection\r\n" +
+	":KirkMcDonald!~Kirk@python/site-packages/KirkMcDonald PRIVMSG #go-nuts :https://golang.org/pkg/time/#Time.String\r\n" +
+	":somenick!~@5-6-7-8.static.bgth.bz  QUIT\r\n"
 
 var tokenToString = map[Token]string{
 	tokenIllegal: "ILLEGAL",
@@ -71,7 +72,7 @@ func TestNextItem(t *testing.T) {
 
 	//:wallyworld!~quassel@5-5-5-5.static.tpgi.com.au  QUIT :Remote host closed the connection\r\n
 	checkNextItem(t, l, tokenColon, ":")
-	checkNextItem(t, l, tokenPrefix, "wallyworld!~quassel@5-5-5-5.static.tpgi.com.au")
+	checkNextItem(t, l, tokenPrefix, "wallyworld!~quassel@1-2-3-4.static.tpgi.com.au")
 	checkNextItem(t, l, tokenSpace, "  ") //Test extra space
 	checkNextItem(t, l, tokenCommand, "QUIT")
 	checkNextItem(t, l, tokenSpace, " ")
@@ -91,11 +92,19 @@ func TestNextItem(t *testing.T) {
 	checkNextItem(t, l, tokenTrailing, "https://golang.org/pkg/time/#Time.String")
 	checkNextItem(t, l, tokenEOL, "\r\n")
 
+	//":somenick!~@5-6-7-8.static.bgth.bz  QUIT\r\n"
+	checkNextItem(t, l, tokenColon, ":")
+	checkNextItem(t, l, tokenPrefix, "somenick!~@5-6-7-8.static.bgth.bz")
+	checkNextItem(t, l, tokenSpace, "  ")
+	checkNextItem(t, l, tokenCommand, "QUIT")
+	checkNextItem(t, l, tokenEOL, "\r\n")
+
 }
 
 func checkNextItem(t *testing.T, l *lexer, expectedToken Token, expectedLiteral string) {
 	actualToken, actualLiteral := l.NextItem()
-	if expectedToken != actualToken || expectedLiteral != actualLiteral {
+	stringLiteral := string(actualLiteral)
+	if expectedToken != actualToken || expectedLiteral != stringLiteral {
 		t.Errorf("Expected: <%s, %s>. Received: <%s, %s>",
 			tokenToString[expectedToken], expectedLiteral, tokenToString[actualToken], actualLiteral)
 	}

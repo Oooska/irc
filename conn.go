@@ -11,7 +11,7 @@ simple helper methods to generate IRC commands.
 
 ***The SSL implementation is currently insecure. *** */
 
-type IRCConn interface {
+type Conn interface {
 	Read() (Message, error)
 	Write(Message) error
 	Close()
@@ -39,11 +39,8 @@ func (client *simpleClient) Close() {
 	client.conn.Close()
 }
 
-func IRCConnectionWrapper(conn net.Conn) IRCConn {
-	return &simpleClient{conn: conn, buffconn: bufio.NewReader(conn)}
-}
-
-func NewIRCConnection(serverAddress string, useSSL bool) (IRCConn, error) {
+//NEWConnection returns a new Connection object
+func NewConnection(serverAddress string, useSSL bool) (Conn, error) {
 	var conn net.Conn
 	var err error
 
@@ -61,5 +58,5 @@ func NewIRCConnection(serverAddress string, useSSL bool) (IRCConn, error) {
 		return nil, err
 	}
 
-	return IRCConnectionWrapper(conn), nil
+	return &simpleClient{conn: conn, buffconn: bufio.NewReader(conn)}, nil
 }

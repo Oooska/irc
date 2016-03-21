@@ -5,6 +5,20 @@ import (
 	"strings"
 )
 
+//ParsedMessage implements the Message interface
+type ParsedMessage struct {
+	Message  string
+	Prefix   string //including :
+	Command  string
+	Params   []string 
+    
+    //Parsed parts of prefix
+    Nick string
+    User string 
+    Host string
+    Server string
+}
+
 type Message string
 
 func (msg Message) String() string {
