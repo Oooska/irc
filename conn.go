@@ -11,12 +11,14 @@ simple helper methods to generate IRC commands.
 
 ***The SSL implementation is currently insecure. *** */
 
+//Conn represents a basic connection to an IRC client. 
 type Conn interface {
 	Read() (Message, error)
 	Write(Message) error
 	Close()
 }
 
+//A very simple implementation of an IRC client
 type simpleClient struct {
 	conn     net.Conn
 	buffconn *bufio.Reader
@@ -25,13 +27,13 @@ type simpleClient struct {
 func (client simpleClient) Read() (msg Message, err error) {
 	line, err := client.buffconn.ReadString('\n')
 	if err == nil {
-		msg = Message(line)
+		msg = NewMessage(line)
 	}
-	return
+    return
 }
 
 func (client simpleClient) Write(msg Message) error {
-	_, err := client.conn.Write([]byte(msg))
+	_, err := client.conn.Write([]byte(msg.String()+"\r\n"))
 	return err
 }
 
@@ -39,7 +41,8 @@ func (client *simpleClient) Close() {
 	client.conn.Close()
 }
 
-//NEWConnection returns a new Connection object
+//NewConnection returns a new IRC Conn object
+//TODO: The SSL implementation is currently insecure.
 func NewConnection(serverAddress string, useSSL bool) (Conn, error) {
 	var conn net.Conn
 	var err error

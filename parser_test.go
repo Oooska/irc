@@ -5,27 +5,27 @@ import (
 )
 
 
-var parserInput = []ParsedMessage{
-        ParsedMessage{ Message: "PING :tepper.freenode.net", Command: "PING",  Params: []string{":tepper.freenode.net"}},
-        ParsedMessage{ Message: ":tepper.freenode.net 332 goirctest #mainehackerclub :MHC@MSF - 3-18-2016 @ Bangor Y 4-8PM\\", 
-            Prefix: ":tepper.freenode.net", Command: "332", Server: "tepper.freenode.net",
+var parserInput = []Message{
+        Message{ Message: "PING :tepper.freenode.net", Command: "PING",  Params: []string{":tepper.freenode.net"}},
+        Message{ Message: ":tepper.freenode.net 332 goirctest #mainehackerclub :MHC@MSF - 3-18-2016 @ Bangor Y 4-8PM\\", 
+            Prefix: ":tepper.freenode.net", Command: "332", Host: "tepper.freenode.net",
             Params: []string{"goirctest", "#mainehackerclub", ":MHC@MSF - 3-18-2016 @ Bangor Y 4-8PM\\"}},
-        ParsedMessage{ Message: ":tepper.freenode.net 353 goirctest = #mainehackerclub :goirctest +ubuntuguru " +
+        Message{ Message: ":tepper.freenode.net 353 goirctest = #mainehackerclub :goirctest +ubuntuguru " +
 	        /*   */"+FatalNIX MaineHackerBot +hpcr2013 +T-800 +infina Oooska +AaronBallman " +
 	        /*   */"@Derrick[afk] dual +Church- +arschmitz +wrexem +powellc +jeepingben +nh_99 " +
-	        /*   */"+zgrep lambdabot +jrvc", Prefix: ":tepper.freenode.net", Command: "353", Server: "tepper.freenode.net",
+	        /*   */"+zgrep lambdabot +jrvc", Prefix: ":tepper.freenode.net", Command: "353", Host: "tepper.freenode.net",
             Params: []string{"goirctest", "=", "#mainehackerclub", ":goirctest +ubuntuguru " +
 	        /*   */"+FatalNIX MaineHackerBot +hpcr2013 +T-800 +infina Oooska +AaronBallman " +
 	        /*   */"@Derrick[afk] dual +Church- +arschmitz +wrexem +powellc +jeepingben +nh_99 " +
             /*   */"+zgrep lambdabot +jrvc",
         }},
-        ParsedMessage{Message: ":wallyworld!~quassel@1-2-3-4.static.tpgi.com.au  QUIT :Remote host closed the connection",
+        Message{Message: ":wallyworld!~quassel@1-2-3-4.static.tpgi.com.au  QUIT :Remote host closed the connection",
             Prefix: ":wallyworld!~quassel@1-2-3-4.static.tpgi.com.au", Command: "QUIT", Nick: "wallyworld", User: "~quassel", 
             Host: "1-2-3-4.static.tpgi.com.au", Params: []string{":Remote host closed the connection"}},
-        ParsedMessage{Message: ":KirkMcDonald!~Kirk@python/site-packages/KirkMcDonald PRIVMSG #go-nuts :https://golang.org/pkg/time/#Time.String",
+        Message{Message: ":KirkMcDonald!~Kirk@python/site-packages/KirkMcDonald PRIVMSG #go-nuts :https://golang.org/pkg/time/#Time.String",
             Prefix: ":KirkMcDonald!~Kirk@python/site-packages/KirkMcDonald", Nick: "KirkMcDonald", User: "~Kirk", 
             Host: "python/site-packages/KirkMcDonald",  Command: "PRIVMSG", Params: []string{"#go-nuts", ":https://golang.org/pkg/time/#Time.String"}},
-        ParsedMessage{Message: ":somenick!~@5-6-7-8.static.bgth.bz  QUIT", Prefix: ":somenick!~@5-6-7-8.static.bgth.bz", 
+        Message{Message: ":somenick!~@5-6-7-8.static.bgth.bz  QUIT", Prefix: ":somenick!~@5-6-7-8.static.bgth.bz", 
             Nick: "somenick", User: "~", Host: "5-6-7-8.static.bgth.bz", Command: "QUIT"},
 }
 
@@ -33,7 +33,7 @@ func TestParseString(t *testing.T){
     
     
     for j, expected := range parserInput {
-        actual := ParseString(expected.Message)
+        actual := NewMessage(expected.Message)
         
         if actual.Message != expected.Message {
             t.Errorf("input[%d]: Message field not parsed correctly. Expected: %s. Received: %s", j, expected.Message, actual.Message)
@@ -67,11 +67,7 @@ func TestParseString(t *testing.T){
         
         if actual.Host != expected.Host {
             t.Errorf("input[%d]: Host field not parsed correctly. Expected: %s. Received: %s", j, expected.Host, actual.Host)
-        }              
-        
-        if actual.Server != expected.Server {
-            t.Errorf("input[%d]: Server field not parsed correctly. Expected: %s. Received: %s", j, expected.Server, actual.Server)
-        }       
+        }                  
     }
     
 }

@@ -2,34 +2,27 @@ package irc
 
 import (
 	"fmt"
-	"strings"
 )
 
-//ParsedMessage implements the Message interface
-type ParsedMessage struct {
+//Message contains the parsed components of an IRC message
+type Message struct {
 	Message  string
 	Prefix   string //including :
 	Command  string
 	Params   []string 
     
     //Parsed parts of prefix
-    Nick string
+    Nick string 
     User string 
-    Host string
-    Server string
+    Host string  //Contains servername if nick/user not specified
 }
 
-type Message string
-
 func (msg Message) String() string {
-	return string(msg)
+	return msg.Message
 }
 
 func NewMessage(msg string) Message {
-	if strings.HasSuffix(msg, "\r\n") {
-		return Message(msg)
-	}
-	return Message(msg + "\r\n")
+	return ParseString(msg)
 }
 
 func UserMessage(username, addr, servername, realname string) Message {

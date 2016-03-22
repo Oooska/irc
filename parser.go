@@ -6,24 +6,23 @@ import (
 
 //ParseString string takes a raw irc command and parses it
 //into a ParsedMessage
-func ParseString(message string) (pm ParsedMessage) {
+func ParseString(message string) (pm Message) {
     
     tokens := strings.Split(strings.TrimSpace(message), " ")
-
-    wordCt := 0
+    k := 0
     
     pm.Message = message
     
     //Check for prefix
-    if wordCt < len(tokens) && parsePrefix(tokens[wordCt], &pm) {
-        wordCt++
+    if k < len(tokens) && parsePrefix(tokens[k], &pm) {
+        k++
     }
     
     //Parse command, ignoring empty tokens
-    for ;wordCt < len(tokens); wordCt++{
-        if tokens[wordCt] != "" {
-            pm.Command = tokens[wordCt]
-            wordCt++
+    for ;k < len(tokens); k++{
+        if tokens[k] != "" {
+            pm.Command = tokens[k]
+            k++
             break
         }
     }
@@ -31,10 +30,10 @@ func ParseString(message string) (pm ParsedMessage) {
     //Check params, ignoring empty tokens.
     //The last argument will include
     //the ':' if present
-    for ; wordCt < len(tokens); wordCt++ {
-        if tokens[wordCt] == "" {
+    for ; k < len(tokens); k++ {
+        if tokens[k] == "" {
             continue
-        } else if tokens[wordCt][0] == ':' {
+        } else if tokens[k][0] == ':' {
             //Grab the rest of the string
             s := strings.SplitAfterN(message[1:], ":", 2)
             if len(s) > 1 {
@@ -43,16 +42,14 @@ func ParseString(message string) (pm ParsedMessage) {
             return
         } 
         
-        pm.Params = append(pm.Params, tokens[wordCt])
+        pm.Params = append(pm.Params, tokens[k])
     }
-    
-    
     return
 }
 
 
 //parses a prefix, and updates the parsedMEssage fields. Returns true if the string is a prefix
-func parsePrefix(prefix string, pm *ParsedMessage) bool {
+func parsePrefix(prefix string, pm *Message) bool {
     if prefix[0] != ':' {
         return false
     }
@@ -61,7 +58,7 @@ func parsePrefix(prefix string, pm *ParsedMessage) bool {
     //Check for the '!' in the host
     i := strings.Index(prefix, "!")
     if (i < 0){//If not present, this is the server name
-        pm.Server = prefix[1:]
+        pm.Host = prefix[1:]
         return true
     }
     
@@ -79,25 +76,4 @@ func parsePrefix(prefix string, pm *ParsedMessage) bool {
 }
 
 
-/*  TODO: Implement a parser for the lexer:
-type parser struct {
-	l   *lexer
-	buf bytes.Buffer
-}
-
-//Returns a new parser
-func newParser(l *lexer) parser {
-	p := parser{l: l}
-	return p
-}
-
-//Grabs the next token & literal, writes the literal to the buffer, and returns both
-func (p *parser) nextToxen() (Token, string) {
-	token, literal := p.l.NextItem()
-	p.buf.Write(literal)
-	return token, string(literal)
-}
-
-/*func (p *parser) ParseMessage() (parsedMessage, error) {
-    
-}*/
+/*  TODO: Implement a parser for the lexer. */
