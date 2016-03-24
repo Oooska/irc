@@ -6,8 +6,11 @@ import (
 	"net"
 )
 
-/* A ridiculously basic IRC client. A simple wrapped around net.Conn, with some
-simple helper methods to generate IRC commands.
+/* Conn represents a connection to an IRC server. It provides
+methods to read, write and close a connection. 
+
+A NewConnectionWrapper method is provided to allow you to provide
+your own implementation of net.Conn (e.g. for a websocket)
 
 ***The SSL implementation is currently insecure. *** */
 
@@ -16,29 +19,6 @@ type Conn interface {
 	Read() (Message, error)
 	Write(Message) error
 	Close()
-}
-
-//A very simple implementation of an IRC client
-type simpleClient struct {
-	conn     net.Conn
-	buffconn *bufio.Reader
-}
-
-func (client simpleClient) Read() (msg Message, err error) {
-	line, err := client.buffconn.ReadString('\n')
-	if err == nil {
-		msg = NewMessage(line)
-	}
-    return
-}
-
-func (client simpleClient) Write(msg Message) error {
-	_, err := client.conn.Write([]byte(msg.String()+"\r\n"))
-	return err
-}
-
-func (client *simpleClient) Close() {
-	client.conn.Close()
 }
 
 //NewConnection returns a new IRC Conn object
@@ -61,5 +41,41 @@ func NewConnection(serverAddress string, useSSL bool) (Conn, error) {
 		return nil, err
 	}
 
-	return &simpleClient{conn: conn, buffconn: bufio.NewReader(conn)}, nil
+	return &simpleConn{conn: conn, buffconn: bufio.NewReader(conn)}, nil
+}
+
+//A very simple implementation of an IRC client
+type simpleConn struct {
+	conn     net.Conn
+	buffconn *bufio.Reader
+}
+
+//Read blocks until a new line is available from the server,
+//It returns a new Message or returns an error
+func (client simpleConn) Read() (msg Message, err error) {
+	line, err := client.buffconn.ReadString('\n')
+	if err == nil {
+		msg = NewMessage(line)
+	}
+    return
+}
+
+//Writes the message to the server.
+//Returns an error if one occurs
+func (client simpleConn) Write(msg Message) error {
+	_, err := client.conn.Write([]byte(msg.String()+"\r\n"))
+	return err
+}
+
+//Closes the connection to the server. It does not send  
+//a quit command.
+func (client *simpleConn) Close() {
+    if client != nil{
+	    client.conn.Close()
+    }
+}
+
+//NewConnectionWrapper provides a new IRC Conn object using the supplied net.Conn object
+func NewConnectionWrapper(conn net.Conn) Conn {
+    return &simpleConn{conn: conn, buffconn: bufio.NewReader(conn)}
 }

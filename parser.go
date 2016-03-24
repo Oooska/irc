@@ -50,7 +50,7 @@ func ParseString(message string) (pm Message) {
 
 //parses a prefix, and updates the parsedMEssage fields. Returns true if the string is a prefix
 func parsePrefix(prefix string, pm *Message) bool {
-    if prefix[0] != ':' {
+    if len(prefix) < 1 || prefix[0] != ':' {
         return false
     }
     pm.Prefix = prefix
