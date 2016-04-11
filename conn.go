@@ -24,7 +24,7 @@ type Conn interface {
 //NewConnection returns a new IRC Conn object
 //TODO: The SSL implementation is currently insecure.
 func NewConnection(serverAddress string, useSSL bool) (Conn, error) {
-	var conn net.Conn
+	var c net.Conn
 	var err error
 
 	if useSSL {
@@ -32,28 +32,28 @@ func NewConnection(serverAddress string, useSSL bool) (Conn, error) {
 			InsecureSkipVerify: true,
 		}
 
-		conn, err = tls.Dial("tcp", serverAddress, &conf)
+		c, err = tls.Dial("tcp", serverAddress, &conf)
 	} else {
-		conn, err = net.Dial("tcp", serverAddress)
+		c, err = net.Dial("tcp", serverAddress)
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &simpleConn{conn: conn, buffconn: bufio.NewReader(conn)}, nil
-}
+	return &conn{conn: c, buffconn: bufio.NewReader(c)}, nil
+} 
 
 //A very simple implementation of an IRC client
-type simpleConn struct {
+type conn struct {
 	conn     net.Conn
 	buffconn *bufio.Reader
 }
 
 //Read blocks until a new line is available from the server,
 //It returns a new Message or returns an error
-func (client simpleConn) Read() (msg Message, err error) {
-	line, err := client.buffconn.ReadString('\n')
+func (c *conn) Read() (msg Message, err error) {
+	line, err := c.buffconn.ReadString('\n')
 	if err == nil {
 		msg = NewMessage(line)
 	}
@@ -62,20 +62,20 @@ func (client simpleConn) Read() (msg Message, err error) {
 
 //Writes the message to the server.
 //Returns an error if one occurs
-func (client simpleConn) Write(msg Message) error {
-	_, err := client.conn.Write([]byte(msg.String()+"\r\n"))
+func (c *conn) Write(msg Message) error {
+	_, err := c.conn.Write([]byte(msg.String()+"\r\n"))
 	return err
 }
 
 //Closes the connection to the server. It does not send  
 //a quit command.
-func (client *simpleConn) Close() {
-    if client != nil{
-	    client.conn.Close()
+func (c *conn) Close() {
+    if c != nil{
+	    c.conn.Close()
     }
 }
 
 //NewConnectionWrapper provides a new IRC Conn object using the supplied net.Conn object
-func NewConnectionWrapper(conn net.Conn) Conn {
-    return &simpleConn{conn: conn, buffconn: bufio.NewReader(conn)}
+func NewConnectionWrapper(c net.Conn) Conn {
+    return &conn{conn: c, buffconn: bufio.NewReader(c)}
 }

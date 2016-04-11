@@ -6,8 +6,9 @@ import (
 
 //ParseString string takes a raw irc command and parses it
 //into a ParsedMessage
+//:PREFIX COMMAND ARG1 ARG2 :Last arg may have spaces if preceeded by colon
+//PREFIX is nick!user@host or servername, and is optional
 func ParseString(message string) (pm Message) {
-    
     tokens := strings.Split(strings.TrimSpace(message), " ")
     k := 0
     
@@ -55,23 +56,24 @@ func parsePrefix(prefix string, pm *Message) bool {
     }
     pm.Prefix = prefix
     
-    //Check for the '!' in the host
+    //Check for the '!' in the prefix
     i := strings.Index(prefix, "!")
     if (i < 0){//If not present, this is the server name
-        pm.Host = prefix[1:]
+        pm.Server = prefix[1:]
         return true
     }
     
-    pm.Nick = prefix[1:i]
+    pm.User = User{}
+    pm.User.Nick = prefix[1:i]
     
     iat := strings.Index(prefix, "@")
     if(iat < 0){
         //No host provided, just nick!user
-        pm.User = prefix[i+1:]
+        pm.User.User = prefix[i+1:]
         return true
     }
-    pm.User = prefix[i+1:iat]
-    pm.Host = prefix[iat+1:]
+    pm.User.User = prefix[i+1:iat]
+    pm.User.Host = prefix[iat+1:]
     return true
 }
 

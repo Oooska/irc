@@ -11,10 +11,16 @@ type Message struct {
 	Command  string
 	Params   []string 
     
+    User User
+    Server string
+}
+
+//Represents an IRC user
+type User struct {
     //Parsed parts of prefix
     Nick string 
     User string 
-    Host string  //Contains servername if nick/user not specified
+    Host string 
 }
 
 func (msg Message) String() string {

@@ -1,47 +1,50 @@
 package irc
 
 const (
-    msgHandlerKey = "*" //key for basicClient.handlers for general handler
+    msgHandlerKey = "*" //key for LiteClient.handlers for general handler
 )
+
+
 
 
 //MessageHandler are functions that will be called by a client upon
 //recieving a message that matches the supplied criteria. 
 type MessageHandler func(Message)
 
-
-//BasicClient interface provides a bareboned client to send/recieved
+//LiteClient interface provides a bareboned client to send/recieved
 //messages, and allows you to add MessageHandlers
-type BasicClient interface {
+type Client interface {
     Next() (Message, error)
     Send(...Message) (int, error)
     Close() 
     
-    AddHandler(MessageHandler)                          //Called on all incoming/outgoing messages
-    
-    AddIncomingHandler(MessageHandler)                  //Called for all incoming messages
-    AddIncomingHandlerOnCmd(MessageHandler, ...string)  //Called on specified commands
-    
-    AddOutgoingHandler(MessageHandler)                  //Called for all incoming messages
-    AddOutgoingHandlerOnCmd(MessageHandler, ...string)  //Called on specified commands
+    AddHandler(HandlerDirection, MessageHandler, ...string) //Called on all incoming/outgoing messages
 }
 
+//Represents the direction a handler should be triggered on
+type HandlerDirection int
+const (
+    Incoming = HandlerDirection(iota)
+    Outgoing
+    Both
+)
 
-//NewBasicClient returns a basic IRC client interface with
+
+//NewLiteClient returns a basic IRC client interface with
 //the ability to Read and Write messages to a server,
 //as well as add 
-func NewBasicClient(serverAddress string, useSSL bool) (BasicClient, error) {
+func NewClient(serverAddress string, useSSL bool) (Client, error) {
     conn, err := NewConnection(serverAddress, useSSL)
     if err != nil {
         return nil, err
     }
 
-    return &basicClient{ conn: conn }, nil
+    return &liteClient{ conn: conn }, nil
 }
 
 
-//basicClient implements the BasicClient interface
-type basicClient struct {
+//LiteClient implements the LiteClient interface
+type liteClient struct {
     conn    Conn
     incomingHandlers map[string][]MessageHandler
     outgoingHandlers map[string][]MessageHandler
@@ -49,7 +52,7 @@ type basicClient struct {
 
 //Next reads the next message, calling all handlers
 //Returns the next Message, and an error if one occured.
-func (c basicClient) Next() (Message, error){
+func (c liteClient) Next() (Message, error){
     msg, err := c.conn.Read()
     
     if err == nil {
@@ -68,7 +71,7 @@ func (c basicClient) Next() (Message, error){
 //Send sends all of the supplied messages to the server.
 //Returns the number of successfully sent messages. It 
 //stops and returns the first error message recieved
-func (c basicClient) Send(msgs ...Message) (int, error) {
+func (c liteClient) Send(msgs ...Message) (int, error) {
     var k int
     var msg Message
     for k, msg = range msgs {
@@ -91,39 +94,34 @@ func (c basicClient) Send(msgs ...Message) (int, error) {
 
 //Closes the connection to the iRC server. It does not
 //send a QUIT message.
-func (c *basicClient) Close() {
+func (c *liteClient) Close() {
     if c != nil {
         c.conn.Close()
     }
 }
 
-//Adds a MessageHandler function to the client. The supplied
-//function will be called for every new message sent or
-//recieved by the client
-func (c basicClient) AddHandler(h MessageHandler){
-    c.AddIncomingHandler(h)
-    c.AddOutgoingHandler(h)
-}
+//Adds a MessageHandler function to the client. The supplied handler
+//will be called for all messages that are going in the specified direction
+//(inbound, outbound or both). If commands are specified, the handler will be
+//called only on those commands. If no commands are specified, the handler will 
+//be called for all messages, regardless of the command.
+func (c liteClient) AddHandler(dir HandlerDirection, h MessageHandler, cmds ...string){
 
-
-func (c basicClient) AddIncomingHandler(h MessageHandler){
-    c.AddIncomingHandlerOnCmd(h, msgHandlerKey)
-}
-
-func (c basicClient) AddIncomingHandlerOnCmd(h MessageHandler, cmds ...string){
-    for _, cmd := range cmds {
-        handlers := c.incomingHandlers[cmd]
-        c.incomingHandlers[cmd] = append(handlers, h)  
-    }    
-}
-
-func (c basicClient) AddOutgoingHandler(h MessageHandler){
-    c.AddOutgoingHandlerOnCmd(h, msgHandlerKey)
-}
-
-func (c basicClient) AddOutgoingHandlerOnCmd(h MessageHandler, cmds ...string){
-    for _, cmd := range cmds {
-        handlers := c.outgoingHandlers[cmd]
-        c.outgoingHandlers[cmd] = append(handlers, h)  
-    }    
+    if len(cmds) < 1 {
+        cmds = []string{msgHandlerKey}
+    }
+    
+    if dir == Incoming || dir == Both{
+        for _, cmd := range cmds {
+            handlers := c.incomingHandlers[cmd]
+            c.incomingHandlers[cmd] = append(handlers, h)
+        }
+    } 
+    
+    if dir == Outgoing || dir == Both {
+        for _, cmd := range cmds {
+            handlers := c.outgoingHandlers[cmd]
+            c.outgoingHandlers[cmd] = append(handlers, h)
+        }        
+    }
 }
