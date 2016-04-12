@@ -5,10 +5,21 @@ import (
     "sort"
 )
 
+//Channels represents the list of channels the client is currently
+//connected to, and the use
+type Channels interface {
+    Add(channel string)
+    Remove(channel string)
+    UserJoins(channel, nick string)
+    UserParts(channel, nick string)
+    UserQuits(nick string)
+    Users(channel string) (users []string)
+    Channels() (channels []string)
+    NumChannels() int
+}
 
 //userList represents a list of users in a channel
 //The key is the username, the value is there mode.
-//TODO: Implement modes
 type userList map[string]string
 //channelUserList is a map of room names to userLists
 type channelUserList map[string]userList
@@ -58,8 +69,8 @@ func (cul channelUserList) UserQuits(user string){
 }
 
 //Returns a sorted slice containing the users in a given channel.
-//The bool value is true if the room exists
 //Returns an empty slice if no channel exists
+//The bool value is true if the room exists, false otherwise
 func (cul channelUserList) Users(channel string) ([]string, bool) {
     ch, ok := cul[channel]
     if ok {
@@ -75,6 +86,7 @@ func (cul channelUserList) Users(channel string) ([]string, bool) {
     return []string{}, ok
 }
 
+//Returns the number of open channels
 func (cul channelUserList) NumChannels() int {
     return len(cul)
 }

@@ -16,11 +16,17 @@ func PingHandler(client Client){
 }
 
 
+func channelHandler(client *fullClient){
+    cul := channelManager(client)
+    client.channelUserList = cul
+}
 
-//Channel manager keeps track of which rooms
-//TODO: Keep track of modes / other data
-//you're in, and who else is in those channels
-func channelManager(client *fullClient){
+//Channel manager keeps track of which rooms you're in, and who else is in those channel
+//Returns a channel user list, a message handler, and list of commands
+//the handler should operate on in both directions.
+//TODO: Keep track of modes / other pertinent data
+//TODO: Listen for nick changes
+func channelManager(client Client) channelUserList {
   //Will use channelUserList in client-structs to implement
   cul := newChannelUserList()
   handler := func(msg Message){
@@ -45,16 +51,23 @@ func channelManager(client *fullClient){
                   cul.UserParts(msg.Params[0], msg.User.Nick)
               }
           } //else malformed request - ignoring
+          case "KICK": 
+          if msg.User.Nick != "" && len(msg.Params) > 0 {
+              cul.UserParts(msg.Params[0], msg.User.Nick)
+              //TODO: Determine if it was the client that got kicked
+          }
           case "QUIT":
           if msg.User.Nick == ""{
               //Client is quitting, empty channel list
-              cul = newChannelUserList()
-              client.cul = cul
+              for _, channel := range cul.Channels() {
+                  cul.Remove(channel)
+              }
           } else {
+              //User is quitting
               cul.UserQuits(msg.User.Nick)
           }
       }
   }
-  client.cul = cul 
-  client.AddHandler(Incoming, handler, "JOIN", "PART", "QUIT")
+  client.AddHandler(Both, handler, "JOIN", "PART", "KICK", "QUIT")
+  return cul
 }

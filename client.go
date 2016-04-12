@@ -4,27 +4,25 @@ const (
     msgHandlerKey = "*" //key for LiteClient.handlers for general handler
 )
 
-
-
-
 //MessageHandler are functions that will be called by a client upon
 //recieving a message that matches the supplied criteria. 
 type MessageHandler func(Message)
 
-//LiteClient interface provides a bareboned client to send/recieved
+//LiteClient interface provides a barebones client to send/recieved
 //messages, and allows you to add MessageHandlers
 type Client interface {
     Next() (Message, error)
     Send(...Message) (int, error)
     Close() 
     
-    AddHandler(HandlerDirection, MessageHandler, ...string) //Called on all incoming/outgoing messages
+    AddHandler(direction handlerDirection, handler MessageHandler, commands ...string) 
 }
 
 //Represents the direction a handler should be triggered on
-type HandlerDirection int
+type handlerDirection int
 const (
-    Incoming = HandlerDirection(iota)
+    //handlerDirections
+    Incoming = handlerDirection(iota)
     Outgoing
     Both
 )
@@ -42,6 +40,11 @@ func NewClient(serverAddress string, useSSL bool) (Client, error) {
     return &liteClient{ conn: conn }, nil
 }
 
+
+type fullClient struct {
+    liteClient
+    channelUserList
+}
 
 //LiteClient implements the LiteClient interface
 type liteClient struct {
@@ -105,7 +108,7 @@ func (c *liteClient) Close() {
 //(inbound, outbound or both). If commands are specified, the handler will be
 //called only on those commands. If no commands are specified, the handler will 
 //be called for all messages, regardless of the command.
-func (c liteClient) AddHandler(dir HandlerDirection, h MessageHandler, cmds ...string){
+func (c liteClient) AddHandler(dir handlerDirection, h MessageHandler, cmds ...string){
 
     if len(cmds) < 1 {
         cmds = []string{msgHandlerKey}
