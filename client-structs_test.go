@@ -1,0 +1,122 @@
+package irc
+
+import (
+    "testing"
+)
+
+
+//TODO: Fix up these tests to use table-driven tests
+//e.g. #4 https://medium.com/@matryer/5-simple-tips-and-tricks-for-writing-unit-tests-in-golang-619653f90742
+
+//Test adding/removing channels using channelUserList
+func TestChannelUserList_channels(t *testing.T){
+    cul := newChannelUserList()
+    
+    if cul.NumChannels() != 0 {
+        t.Errorf("A newly created channelUserList is suppose to be empty, but has length %d", cul.NumChannels())
+    }
+    
+    channels := cul.Channels()
+    if len(channels) != 0 {
+        t.Errorf("A new created channelUserList does not return an empty slice of channel names. Found %d", len(channels))
+    }
+    
+    cul.Add("#test")
+    
+    if cul.NumChannels() != 1 {
+        t.Errorf("Adding a channel does not increase the number of channels. Expected: 1, found: %d", cul.NumChannels())
+    }
+    
+    cul.Add("#test2")
+    cul.Add("#test3")
+    if cul.NumChannels() != 3 {
+        t.Errorf("Adding a channel does not increase the number of channels. Expected: 3, found: %d", cul.NumChannels())
+    }
+    
+    channels = cul.Channels()
+    if channels[0] != "#test" || channels[1] != "#test2" || channels[2] != "#test3" {
+        t.Errorf(`Channels() did not return the correct channel names in alphabetical order. `+
+        ` Expected: ["#test", "#test1", "#test2"], Recieved: %+v`, channels)
+    }
+    
+    cul.Remove("#test2")
+    if cul.NumChannels() != 2 {
+        t.Errorf("Remove() did not remove the requested item. Expected 2 items, found %d", cul.NumChannels())
+    }
+    
+    channels = cul.Channels()
+    if channels[0] != "#test" || channels[1] != "#test3" {
+        t.Errorf(`Channels() did not return the correct channel names in alphabetical order. `+
+        ` Expected: ["#test", "#test3"], Recieved: %+v`, channels)
+    }
+    
+    cul.Remove("#test")
+    if cul.NumChannels() != 1 {
+        t.Errorf("Remove() did not remove the requested item. Expected 2 items, found %d", cul.NumChannels())
+    }
+    
+    channels = cul.Channels()
+    if channels[0] != "#test3" {
+        t.Errorf(`Channels() did not return the correct channel names in alphabetical order. `+
+        ` Expected: [#test3"], Recieved: %+v`, channels)
+    }
+    
+    cul.Remove("#test3")
+    if cul.NumChannels() != 0 {
+        t.Errorf("Remove() did not remove the requested item. Expected 0 items, found %d", cul.NumChannels())
+    }  
+}
+
+//Tests adding/removing users from specified channels
+func TestChannelUserList_users(t *testing.T){
+    cul := newChannelUserList()
+    
+    users, ok := cul.Users("#no-such-channel-exists")
+    if ok || len(users) != 0 {
+        t.Errorf("Requesting a channel did not return with an empty slice, false. Recieved: %+v, %s",users, ok)
+    }
+    
+    cul.Add("#test")
+    cul.Add("#test2")
+    
+    users, ok = cul.Users("#test")
+    if !ok {
+        t.Errorf("Users() returned !ok when requesting a list of users for an existing channel.")
+    }
+    if len(users) != 0 {
+        t.Errorf("Users()) did not return an empty list when requesting a list of users in an empty channel. Recieved %v", users)
+    }
+    
+    
+    cul.UserJoins("#test", "user")
+    
+    users, ok = cul.Users("#test")
+    if !ok {
+        t.Errorf("Users() returned !ok when requesting a list of users for an existing channel")
+    }
+    if len(users) != 1 {
+        t.Errorf("Users() did not return the correct number of users. Expected 1, recieved: %d", len(users))
+    }
+    if users[0] != "user" {
+        t.Errorf("Users() returns an incorrect user. Expected \"user\", found \"%s\"",users[9])
+    }
+    
+    cul.UserJoins("#test", "captain_planet")
+    users, ok = cul.Users("#test")
+    if len(users) != 2 {
+        t.Errorf("Users() did not return the correct number of users. Expected 2, recieved: %d", len(users))
+    }
+    if users[0] != "captain_planet" || users[1] != "user" {
+        t.Errorf(`Users() did not return the correct slice of users. Expected {"captain_planet", "user"}", found: %+v`, users)
+    } 
+    
+    
+    cul.UserJoins("#test", "captain_america")
+    users, ok = cul.Users("#test")
+    if len(users) != 3 {
+        t.Errorf("Users() did not return the correct number of users. Expected 3, recieved: %d", len(users))
+    }
+    if users[0] != "captain_america" || users[1] != "captain_planet" || users[2] != "user" {
+        t.Errorf(`Users() did not return the correct slice of users. Expected {"captain_america", captain_planet", "user"}", found: %+v`, users)
+    } 
+}
