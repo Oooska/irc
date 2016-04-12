@@ -1,12 +1,25 @@
 package irc
 
+import (
+    "log"
+)
+
+
+/* Client Handlers are functions that add useful functionality to
+    a irc.Client. They do this by attaching MessageHandlers to the
+    client. 
+*/
+
+//ClientHandler is a function that attaches MessageHandlers to a client
+type ClientHandler func(Client)
+
 
 //PingHandler registers a handler to respond to pings
 func PingHandler(client Client){
     handler := func(msg Message){
-      resp := "PONG "
+      resp := "PONG"
       if len(msg.Params) > 0{
-        resp += msg.Params[0]
+        resp += " "+msg.Params[0]
       } 
       
       client.Send(NewMessage(resp))
@@ -15,19 +28,27 @@ func PingHandler(client Client){
     client.AddHandler(Incoming, handler, "PING")
 }
 
-
-func channelHandler(client *fullClient){
-    cul := channelManager(client)
-    client.Channels = cul
+//LogHandler logs all messages to the default logger
+func LogHandler(client Client){
+    handler := func(msg Message){
+        log.Printf(msg.Message)
+    }
+    client.AddHandler(Both, handler)
 }
 
-//Channel manager keeps track of which rooms you're in, and who else is in those channel
-//Returns a channel user list, a message handler, and list of commands
-//the handler should operate on in both directions.
+
+//Registers the channels handler to a fullclient, and sets the
+//channels object.
+func fcChannelHandler(client *fullClient){
+    ch := RegisterChannelsHandler(client)
+    client.Channels = ch
+}
+
+//RegisterChannelsHandler keeps track of which rooms you're in, and who else is in those channels
+//Returns a Channels object. 
 //TODO: Keep track of modes / other pertinent data
 //TODO: Listen for nick changes
-func channelManager(client Client) Channels {
-  //Will use channelUserList in client-structs to implement
+func RegisterChannelsHandler(client Client) Channels {
   cul := newChannelUserList()
   handler := func(msg Message){
       switch(msg.Command){

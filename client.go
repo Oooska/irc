@@ -8,6 +8,7 @@ const (
 //recieving a message that matches the supplied criteria. 
 type MessageHandler func(Message)
 
+
 //LiteClient interface provides a barebones client to send/recieved
 //messages, and allows you to add MessageHandlers
 type Client interface {
@@ -18,29 +19,39 @@ type Client interface {
     AddHandler(direction handlerDirection, handler MessageHandler, commands ...string) 
 }
 
-//Represents the direction a handler should be triggered on
+//handlerDirection represents the direction a handler should be triggered on
 type handlerDirection int
 const (
-    //handlerDirections
-    Incoming = handlerDirection(iota)
+    Incoming handlerDirection = iota
     Outgoing
-    Both
+    Both 
 )
 
 
 //NewLiteClient returns a basic IRC client interface with
 //the ability to Read and Write messages to a server,
 //as well as add 
-func NewClient(serverAddress string, useSSL bool) (Client, error) {
+func NewClient(serverAddress string, useSSL bool, handlers ...ClientHandler) (Client, error) {
     conn, err := NewConnection(serverAddress, useSSL)
     if err != nil {
         return nil, err
     }
 
-    return &liteClient{ conn: conn }, nil
+    client := liteClient{ 
+        Conn: conn, 
+        incomingHandlers: make(map[string][]MessageHandler),
+        outgoingHandlers: make(map[string][]MessageHandler), 
+    }
+    
+    for _, h := range handlers {
+        h(&client)
+    }
+    
+    return &client, nil
 }
 
-
+//fullClient implements liteClient, along with embedding Channels
+//and soon to be other functionality (message logs, etc)
 type fullClient struct {
     liteClient
     Channels
@@ -48,7 +59,7 @@ type fullClient struct {
 
 //LiteClient implements the LiteClient interface
 type liteClient struct {
-    conn    Conn
+    Conn
     incomingHandlers map[string][]MessageHandler
     outgoingHandlers map[string][]MessageHandler
 }
@@ -56,7 +67,7 @@ type liteClient struct {
 //Next reads the next message, calling all handlers
 //Returns the next Message, and an error if one occured.
 func (c liteClient) Next() (Message, error){
-    msg, err := c.conn.Read()
+    msg, err := c.Conn.Read()
     
     if err == nil {
         for _, h := range c.incomingHandlers[msgHandlerKey]{
@@ -78,7 +89,7 @@ func (c liteClient) Send(msgs ...Message) (int, error) {
     var k int
     var msg Message
     for k, msg = range msgs {
-        err := c.conn.Write(msg)
+        err := c.Conn.Write(msg)
         if err != nil {
             return k-1, err
         } 
@@ -99,7 +110,7 @@ func (c liteClient) Send(msgs ...Message) (int, error) {
 //send a QUIT message.
 func (c *liteClient) Close() {
     if c != nil {
-        c.conn.Close()
+        c.Conn.Close()
     }
 }
 

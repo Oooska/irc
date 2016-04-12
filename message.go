@@ -47,3 +47,7 @@ func NickMessage(nick string) Message {
 func PrivMessage(channel, msg string) Message {
 	return NewMessage(fmt.Sprintf("PRIVMSG %s :%s", channel, msg))
 }
+
+func JoinMessage(channel string) Message {
+    return NewMessage("JOIN "+channel)
+}
