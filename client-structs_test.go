@@ -36,7 +36,7 @@ func TestChannelUserList_channels(t *testing.T){
     channels = cul.Channels()
     if channels[0] != "#test" || channels[1] != "#test2" || channels[2] != "#test3" {
         t.Errorf(`Channels() did not return the correct channel names in alphabetical order. `+
-        ` Expected: ["#test", "#test1", "#test2"], Recieved: %+v`, channels)
+        ` Expected: ["#test", "#test1", "#test2"], Received: %+v`, channels)
     }
     
     cul.Remove("#test2")
@@ -47,7 +47,7 @@ func TestChannelUserList_channels(t *testing.T){
     channels = cul.Channels()
     if channels[0] != "#test" || channels[1] != "#test3" {
         t.Errorf(`Channels() did not return the correct channel names in alphabetical order. `+
-        ` Expected: ["#test", "#test3"], Recieved: %+v`, channels)
+        ` Expected: ["#test", "#test3"], Received: %+v`, channels)
     }
     
     cul.Remove("#test")
@@ -58,7 +58,7 @@ func TestChannelUserList_channels(t *testing.T){
     channels = cul.Channels()
     if channels[0] != "#test3" {
         t.Errorf(`Channels() did not return the correct channel names in alphabetical order. `+
-        ` Expected: [#test3"], Recieved: %+v`, channels)
+        ` Expected: [#test3"], Received: %+v`, channels)
     }
     
     cul.Remove("#test3")
@@ -73,7 +73,7 @@ func TestChannelUserList_users(t *testing.T){
     
     users, ok := cul.Users("#no-such-channel-exists")
     if ok || len(users) != 0 {
-        t.Errorf("Requesting a channel did not return with an empty slice, false. Recieved: %+v, %s",users, ok)
+        t.Errorf("Requesting a channel did not return with an empty slice, false. Received: %+v, %s",users, ok)
     }
     
     cul.Add("#test")
@@ -84,7 +84,7 @@ func TestChannelUserList_users(t *testing.T){
         t.Errorf("Users() returned !ok when requesting a list of users for an existing channel.")
     }
     if len(users) != 0 {
-        t.Errorf("Users()) did not return an empty list when requesting a list of users in an empty channel. Recieved %v", users)
+        t.Errorf("Users()) did not return an empty list when requesting a list of users in an empty channel. Received %v", users)
     }
     
     
@@ -95,7 +95,7 @@ func TestChannelUserList_users(t *testing.T){
         t.Errorf("Users() returned !ok when requesting a list of users for an existing channel")
     }
     if len(users) != 1 {
-        t.Errorf("Users() did not return the correct number of users. Expected 1, recieved: %d", len(users))
+        t.Errorf("Users() did not return the correct number of users. Expected 1, Received: %d", len(users))
     }
     if users[0] != "user" {
         t.Errorf("Users() returns an incorrect user. Expected \"user\", found \"%s\"",users[9])
@@ -104,7 +104,7 @@ func TestChannelUserList_users(t *testing.T){
     cul.UserJoins("#test", "captain_planet")
     users, ok = cul.Users("#test")
     if len(users) != 2 {
-        t.Errorf("Users() did not return the correct number of users. Expected 2, recieved: %d", len(users))
+        t.Errorf("Users() did not return the correct number of users. Expected 2, Received: %d", len(users))
     }
     if users[0] != "captain_planet" || users[1] != "user" {
         t.Errorf(`Users() did not return the correct slice of users. Expected {"captain_planet", "user"}", found: %+v`, users)
@@ -114,9 +114,50 @@ func TestChannelUserList_users(t *testing.T){
     cul.UserJoins("#test", "captain_america")
     users, ok = cul.Users("#test")
     if len(users) != 3 {
-        t.Errorf("Users() did not return the correct number of users. Expected 3, recieved: %d", len(users))
+        t.Errorf("Users() did not return the correct number of users. Expected 3, Received: %d", len(users))
     }
     if users[0] != "captain_america" || users[1] != "captain_planet" || users[2] != "user" {
         t.Errorf(`Users() did not return the correct slice of users. Expected {"captain_america", captain_planet", "user"}", found: %+v`, users)
     } 
+    
+    cul.UserJoins("#test2", "user")
+    cul.UserJoins("#test2", "captain_america")
+    
+    users, ok = cul.Users("#test2")
+    if len(users) != 2 {
+        t.Errorf("Users() did not return the correct number of users. Expected 2, Received: %d", len(users))
+    }
+    if users[0] != "captain_america" || users[1] != "user" {
+        t.Errorf(`Users() did not return the correct slice of users. Expected {"captain_america", "user"}", found: %+v`, users)
+    } 
+    
+    cul.UserQuits("captain_america")
+    users, ok = cul.Users("#test")
+    if len(users) != 2 {
+        t.Errorf("Users() did not return the correct number of users. Expected 2, Received: %d", len(users))
+    }
+    if users[0] != "captain_planet" || users[1] != "user" {
+        t.Errorf(`Users() returning a user that should have been removed after quitting. `+
+          `Expected: {"captain_planet", "user"}, Received: %+v`, users)
+    }
+    
+    users, ok = cul.Users("#test2")
+    if len(users) != 1 {
+        t.Errorf("Users() did not return the correct number of users. Expected 1, Received: %d", len(users))
+    }
+    if users[0] != "user" {
+        t.Errorf(`Users() returning a user that should have been removed after quitting. `+
+          `Expected: {"captain_planet", "user"}, Received: %+v`, users)
+    }
+    
+    cul.UserParts("#test", "user")
+    users, ok = cul.Users("#test")
+    if len(users) != 1 {
+        t.Errorf("Users() did not return the correct number of users. Expected 1, Received: %d", len(users))
+    }
+    if users[0] != "captain_planet" {
+        t.Errorf(`Users() returning the incorrect list `+
+          `Expected: {"captain_planet"}, Received: %+v`, users)
+    }
+    
 }
