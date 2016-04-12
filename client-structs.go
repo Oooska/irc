@@ -2,23 +2,29 @@ package irc
 
 import (
     "errors"
+    "sort"
 )
 
-type userList map[string]bool
+
+//userList represents a list of users in a channel
+//The key is the username, the value is there mode.
+//TODO: Implement modes
+type userList map[string]string
+//channelUserList is a map of room names to userLists
 type channelUserList map[string]userList
 
 func newChannelUserList() channelUserList {
-    cul := make(map[string]userList)
+    cul := make(channelUserList)
     return cul
 }
 
 //Creates an empty channel.
-func (cul channelUserList) Join(channel string){
-    cul[channel] = make(map[string]bool)
+func (cul channelUserList) Add(channel string){
+    cul[channel] = make(userList)
 }
 
-//Deletes a channel
-func (cul channelUserList) Part(channel string){
+//Removes a channel
+func (cul channelUserList) Remove(channel string){
     delete(cul, channel)
 }
 
@@ -27,7 +33,7 @@ func (cul channelUserList) Part(channel string){
 func (cul channelUserList) UserJoins(channel, user string) error {
     ul, ok := cul[channel]
     if ok {
-        ul[user] = true
+        ul[user] = ""
         return nil
     }
     
@@ -51,9 +57,10 @@ func (cul channelUserList) UserQuits(user string){
     }
 }
 
-//Returns a slice containing the users in a given channel.
+//Returns a sorted slice containing the users in a given channel.
+//The bool value is true if the room exists
 //Returns an empty slice if no channel exists
-func (cul channelUserList) Users(channel string) []string{
+func (cul channelUserList) Users(channel string) ([]string, bool) {
     ch, ok := cul[channel]
     if ok {
         users := make([]string, len(ch))
@@ -62,7 +69,24 @@ func (cul channelUserList) Users(channel string) []string{
             users[k] = user
             k++
         }
-        return users    
+        sort.Strings(users)
+        return users, ok    
     }
-    return []string{}
+    return []string{}, ok
+}
+
+func (cul channelUserList) NumChannels() int {
+    return len(cul)
+}
+
+//Returns a sorted list of channels
+func (cul channelUserList) Channels() []string {
+    channels := make([]string, len(cul))
+    k := 0
+    for key := range cul {
+        channels[k] = key
+        k++
+    }
+    sort.Strings(channels)
+    return channels
 }
