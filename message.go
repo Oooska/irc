@@ -4,24 +4,39 @@ import (
 	"fmt"
 )
 
-//Message contains the parsed components of an IRC message
+/* A Message represents a message sent to or from the IRC server.
+
+The various components of the message are parsed for convenience.
+
+Psudo-BNF from: https://tools.ietf.org/html/rfc1459#section-2.3.1
+
+
+<message>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
+<prefix>   ::= <servername> | <nick> [ '!' <user> ] [ '@' <host> ]
+<command>  ::= <letter> { <letter> } | <number> <number> <number>
+
+<params>   ::= <SPACE> [ ':' <trailing> | <middle> <params> ]
+<middle>   ::= <Any *non-empty* sequence of octets not including SPACE
+               or NUL or CR or LF, the first of which may not be ':'>
+<trailing> ::= <Any, possibly *empty*, sequence of octets not including
+                 NUL or CR or LF>
+*/
 type Message struct {
-	Message  string
-	Prefix   string //including :
-	Command  string
-	Params   []string 
+	Message  string   //The raw, unparsed message
     
-    User User
+	Prefix   string   //includes the ':' character
+    Nick string 
+    User string  
+    Host string 
     Server string
+    
+    
+	Command  string
+	Params   []string //Includes Trailing as the final argument with the '
+    Trailing string   //excludes the ':'
+
 }
 
-//Represents an IRC user
-type User struct {
-    //Parsed parts of prefix
-    Nick string 
-    User string 
-    Host string 
-}
 
 //String returns the full IRC command string
 func (msg Message) String() string {

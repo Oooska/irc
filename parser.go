@@ -39,6 +39,7 @@ func ParseString(message string) (pm Message) {
             s := strings.SplitAfterN(message[1:], ":", 2)
             if len(s) > 1 {
                 pm.Params = append(pm.Params, ":"+s[1])
+                pm.Trailing = s[1]
             }
             return
         } 
@@ -63,17 +64,17 @@ func parsePrefix(prefix string, pm *Message) bool {
         return true
     }
     
-    pm.User = User{}
-    pm.User.Nick = prefix[1:i]
+
+    pm.Nick = prefix[1:i]
     
     iat := strings.Index(prefix, "@")
     if(iat < 0){
         //No host provided, just nick!user
-        pm.User.User = prefix[i+1:]
+        pm.User = prefix[i+1:]
         return true
     }
-    pm.User.User = prefix[i+1:iat]
-    pm.User.Host = prefix[iat+1:]
+    pm.User = prefix[i+1:iat]
+    pm.Host = prefix[iat+1:]
     return true
 }
 

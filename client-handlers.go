@@ -54,38 +54,38 @@ func RegisterChannelsHandler(client Client) Channels {
       switch(msg.Command){
           case "JOIN":
           if len(msg.Params) > 0 {
-                if msg.User.Nick == "" {
+                if msg.Nick == "" {
                     //JOIN #room
                     cul.Add(msg.Params[0])
                 } else {
                     //nick JOIN #room
-                    cul.UserJoins(msg.Params[0], msg.User.Nick)
+                    cul.UserJoins(msg.Params[0], msg.Nick)
                 }
           } //else malformed request - ignoring
           case "PART":
           if len(msg.Params) > 0 {
-              if msg.User.Nick == "" {
+              if msg.Nick == "" {
                   //PART #room
                   cul.Remove(msg.Params[0])
               } else {
                   //nick PART #channel :reason
-                  cul.UserParts(msg.Params[0], msg.User.Nick)
+                  cul.UserParts(msg.Params[0], msg.Nick)
               }
           } //else malformed request - ignoring
           case "KICK": 
-          if msg.User.Nick != "" && len(msg.Params) > 0 {
-              cul.UserParts(msg.Params[0], msg.User.Nick)
+          if msg.Nick != "" && len(msg.Params) > 0 {
+              cul.UserParts(msg.Params[0], msg.Nick)
               //TODO: Determine if it was the client that got kicked
           }
           case "QUIT":
-          if msg.User.Nick == ""{
+          if msg.Nick == ""{
               //Client is quitting, empty channel list
               for _, channel := range cul.Channels() {
                   cul.Remove(channel)
               }
           } else {
               //User is quitting
-              cul.UserQuits(msg.User.Nick)
+              cul.UserQuits(msg.Nick)
           }
       }
   }

@@ -13,8 +13,6 @@ A NewConnectionWrapper method is provided to allow you to provide
 your own implementation of net.Conn (e.g. for a websocket)
 
 ***The SSL implementation is currently insecure. *** */
-
-//Conn represents a basic connection to an IRC client. 
 type Conn interface {
 	Read() (Message, error)
 	Write(Message) error
