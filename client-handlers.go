@@ -1,5 +1,8 @@
 package irc
 
+import (
+    "log"
+)
 
 //PingHandler registers a handler to respond to pings
 func PingHandler(client Client){
@@ -15,10 +18,18 @@ func PingHandler(client Client){
     client.AddHandler(Incoming, handler, "PING")
 }
 
+//LogHandler logs all messages to the default logger
+func LogHandler(client Client){
+    handler := func(msg Message){
+        log.Printf(msg.Message)
+    }
+    client.AddHandler(Both, handler)
+}
 
-func channelHandler(client *fullClient){
-    cul := channelManager(client)
-    client.Channels = cul
+
+func fcChannelHandler(client *fullClient){
+    ch := RegisterChannelsHandler(client)
+    client.Channels = ch
 }
 
 //Channel manager keeps track of which rooms you're in, and who else is in those channel
@@ -26,7 +37,7 @@ func channelHandler(client *fullClient){
 //the handler should operate on in both directions.
 //TODO: Keep track of modes / other pertinent data
 //TODO: Listen for nick changes
-func channelManager(client Client) Channels {
+func RegisterChannelsHandler(client Client) Channels {
   //Will use channelUserList in client-structs to implement
   cul := newChannelUserList()
   handler := func(msg Message){
