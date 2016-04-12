@@ -18,7 +18,7 @@ func PingHandler(client Client){
 
 func channelHandler(client *fullClient){
     cul := channelManager(client)
-    client.channelUserList = cul
+    client.Channels = cul
 }
 
 //Channel manager keeps track of which rooms you're in, and who else is in those channel
@@ -26,7 +26,7 @@ func channelHandler(client *fullClient){
 //the handler should operate on in both directions.
 //TODO: Keep track of modes / other pertinent data
 //TODO: Listen for nick changes
-func channelManager(client Client) channelUserList {
+func channelManager(client Client) Channels {
   //Will use channelUserList in client-structs to implement
   cul := newChannelUserList()
   handler := func(msg Message){
@@ -69,5 +69,5 @@ func channelManager(client Client) channelUserList {
       }
   }
   client.AddHandler(Both, handler, "JOIN", "PART", "KICK", "QUIT")
-  return cul
+  return Channels(cul)
 }

@@ -43,7 +43,7 @@ func NewClient(serverAddress string, useSSL bool) (Client, error) {
 
 type fullClient struct {
     liteClient
-    channelUserList
+    Channels
 }
 
 //LiteClient implements the LiteClient interface

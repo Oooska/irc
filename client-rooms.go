@@ -5,15 +5,19 @@ import (
     "sort"
 )
 
+
+ var   ErrChannelDNE = errors.New("Room Does Not Exist")
+
+
 //Channels represents the list of channels the client is currently
 //connected to, and the use
 type Channels interface {
     Add(channel string)
     Remove(channel string)
-    UserJoins(channel, nick string)
-    UserParts(channel, nick string)
+    UserJoins(channel, nick string) error
+    UserParts(channel, nick string) error
     UserQuits(nick string)
-    Users(channel string) (users []string)
+    Users(channel string) (users []string, err error)
     Channels() (channels []string)
     NumChannels() int
 }
@@ -40,7 +44,7 @@ func (cul channelUserList) Remove(channel string){
 }
 
 //Adds the specified user to the specified channel.
-//Returns an error if channel does not exist
+//Returns ErrChannelDNE if channel does not exist
 func (cul channelUserList) UserJoins(channel, user string) error {
     ul, ok := cul[channel]
     if ok {
@@ -48,17 +52,18 @@ func (cul channelUserList) UserJoins(channel, user string) error {
         return nil
     }
     
-    return errors.New("No channel exists.") 
+    return ErrChannelDNE
 }
 
-//Removes the specified user from the specified channel
+//Removes the specified user from the specified channel.
+//Returns ErrChannelDNE if room does not exist
 func (cul channelUserList) UserParts(channel, user string) error {
     ul, ok := cul[channel]
     if ok {
         delete(ul, user)
         return nil
     }
-    return errors.New("No channel exists.")  
+    return ErrChannelDNE 
 }
 
 //Removes the specified user from all channels
@@ -71,7 +76,7 @@ func (cul channelUserList) UserQuits(user string){
 //Returns a sorted slice containing the users in a given channel.
 //Returns an empty slice if no channel exists
 //The bool value is true if the room exists, false otherwise
-func (cul channelUserList) Users(channel string) ([]string, bool) {
+func (cul channelUserList) Users(channel string) ([]string, error) {
     ch, ok := cul[channel]
     if ok {
         users := make([]string, len(ch))
@@ -81,9 +86,9 @@ func (cul channelUserList) Users(channel string) ([]string, bool) {
             k++
         }
         sort.Strings(users)
-        return users, ok    
+        return users, nil    
     }
-    return []string{}, ok
+    return []string{}, ErrChannelDNE
 }
 
 //Returns the number of open channels

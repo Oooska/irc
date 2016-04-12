@@ -71,17 +71,17 @@ func TestChannelUserList_channels(t *testing.T){
 func TestChannelUserList_users(t *testing.T){
     cul := newChannelUserList()
     
-    users, ok := cul.Users("#no-such-channel-exists")
-    if ok || len(users) != 0 {
-        t.Errorf("Requesting a channel did not return with an empty slice, false. Received: %+v, %s",users, ok)
+    users, err := cul.Users("#no-such-channel-exists")
+    if err == nil || len(users) != 0 {
+        t.Errorf("Requesting a channel did not return with an empty slice, false. Received: %+v, %s",users, err.Error())
     }
     
     cul.Add("#test")
     cul.Add("#test2")
     
-    users, ok = cul.Users("#test")
-    if !ok {
-        t.Errorf("Users() returned !ok when requesting a list of users for an existing channel.")
+    users, err = cul.Users("#test")
+    if err != nil {
+        t.Errorf("Users() returned error %s when requesting a list of users for an existing channel.", err.Error())
     }
     if len(users) != 0 {
         t.Errorf("Users()) did not return an empty list when requesting a list of users in an empty channel. Received %v", users)
@@ -90,9 +90,9 @@ func TestChannelUserList_users(t *testing.T){
     
     cul.UserJoins("#test", "user")
     
-    users, ok = cul.Users("#test")
-    if !ok {
-        t.Errorf("Users() returned !ok when requesting a list of users for an existing channel")
+    users, err = cul.Users("#test")
+    if err != nil {
+        t.Errorf("Users() returned error %s when requesting a list of users for an existing channel", err.Error())
     }
     if len(users) != 1 {
         t.Errorf("Users() did not return the correct number of users. Expected 1, Received: %d", len(users))
@@ -102,7 +102,7 @@ func TestChannelUserList_users(t *testing.T){
     }
     
     cul.UserJoins("#test", "captain_planet")
-    users, ok = cul.Users("#test")
+    users, err = cul.Users("#test")
     if len(users) != 2 {
         t.Errorf("Users() did not return the correct number of users. Expected 2, Received: %d", len(users))
     }
@@ -112,7 +112,7 @@ func TestChannelUserList_users(t *testing.T){
     
     
     cul.UserJoins("#test", "captain_america")
-    users, ok = cul.Users("#test")
+    users, err = cul.Users("#test")
     if len(users) != 3 {
         t.Errorf("Users() did not return the correct number of users. Expected 3, Received: %d", len(users))
     }
@@ -123,7 +123,7 @@ func TestChannelUserList_users(t *testing.T){
     cul.UserJoins("#test2", "user")
     cul.UserJoins("#test2", "captain_america")
     
-    users, ok = cul.Users("#test2")
+    users, err = cul.Users("#test2")
     if len(users) != 2 {
         t.Errorf("Users() did not return the correct number of users. Expected 2, Received: %d", len(users))
     }
@@ -132,7 +132,7 @@ func TestChannelUserList_users(t *testing.T){
     } 
     
     cul.UserQuits("captain_america")
-    users, ok = cul.Users("#test")
+    users, err = cul.Users("#test")
     if len(users) != 2 {
         t.Errorf("Users() did not return the correct number of users. Expected 2, Received: %d", len(users))
     }
@@ -141,7 +141,7 @@ func TestChannelUserList_users(t *testing.T){
           `Expected: {"captain_planet", "user"}, Received: %+v`, users)
     }
     
-    users, ok = cul.Users("#test2")
+    users, err = cul.Users("#test2")
     if len(users) != 1 {
         t.Errorf("Users() did not return the correct number of users. Expected 1, Received: %d", len(users))
     }
@@ -151,7 +151,7 @@ func TestChannelUserList_users(t *testing.T){
     }
     
     cul.UserParts("#test", "user")
-    users, ok = cul.Users("#test")
+    users, err = cul.Users("#test")
     if len(users) != 1 {
         t.Errorf("Users() did not return the correct number of users. Expected 1, Received: %d", len(users))
     }
