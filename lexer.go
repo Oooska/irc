@@ -29,10 +29,10 @@ BNF From: tools.ietf.org/html/rfc1459#section-2.3.1
 TODO: The lexer currently does not signal trouble by returning an illegal token
 when illegal characters are found
 */
-type Token int
+type ircToken int
 
 const (
-	tokenIllegal Token = iota
+	tokenIllegal ircToken = iota
 	tokenEOF
 
 	tokenPrefix
@@ -56,7 +56,7 @@ const (
 type lexer struct {
 	s *bufio.Reader
 
-	bufTokens  []Token
+	bufTokens  []ircToken
 	bufLiteral [][]byte
 }
 
@@ -65,7 +65,7 @@ func newLexer(r io.Reader) *lexer {
 }
 
 //Scan() returns the next token, and the actual string value
-func (l *lexer) NextItem() (token Token, literal []byte) {
+func (l *lexer) NextItem() (token ircToken, literal []byte) {
 	//ch, _, _ := l.next()
 	if len(l.bufTokens) == 0 {
 		l.tokenizeNextMessage()
@@ -100,7 +100,7 @@ func (l *lexer) peak() byte {
 	return ch
 }
 
-func (l *lexer) addToken(token Token, literal []byte) {
+func (l *lexer) addToken(token ircToken, literal []byte) {
 	l.bufTokens = append(l.bufTokens, token)
 	l.bufLiteral = append(l.bufLiteral, literal)
 }
@@ -153,7 +153,7 @@ func (l *lexer) scanChstring() []byte {
 }
 
 //Scans until encountering CRLF, or NUL
-func (l *lexer) scanTrailing() (Token, []byte) {
+func (l *lexer) scanTrailing() (ircToken, []byte) {
 	var buf bytes.Buffer
 	for {
 		if ch := l.next(); ch != byteCR && ch != byteLF && ch != byteNUL {
@@ -180,7 +180,7 @@ func (l *lexer) scanWord() []byte {
 //Consumes spaces (0x20) until the next non-space character
 //Returns tokenSpace, and a string containing the same
 //number of space characters consumed.
-func (l *lexer) scanSpaces() (Token, []byte) {
+func (l *lexer) scanSpaces() (ircToken, []byte) {
 	var buf bytes.Buffer
 	for {
 		if l.peak() == ' ' {
@@ -192,7 +192,7 @@ func (l *lexer) scanSpaces() (Token, []byte) {
 }
 
 //Scans EOL characters (\r\n)
-func (l *lexer) scanEOL() (Token, []byte) {
+func (l *lexer) scanEOL() (ircToken, []byte) {
 	var buf bytes.Buffer
 	if isEOL(l.peak()) {
 		buf.WriteByte(l.next())

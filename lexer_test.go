@@ -15,7 +15,7 @@ var input = "PING :tepper.freenode.net\r\n" +
 	":KirkMcDonald!~Kirk@python/site-packages/KirkMcDonald PRIVMSG #go-nuts :https://golang.org/pkg/time/#Time.String\r\n" +
 	":somenick!~@5-6-7-8.static.bgth.bz  QUIT\r\n"
 
-var tokenToString = map[Token]string{
+var tokenToString = map[ircToken]string{
 	tokenIllegal: "ILLEGAL",
 	tokenEOF:     "EOF",
 	tokenPrefix:  "PREFIX",
@@ -101,7 +101,7 @@ func TestNextItem(t *testing.T) {
 
 }
 
-func checkNextItem(t *testing.T, l *lexer, expectedToken Token, expectedLiteral string) {
+func checkNextItem(t *testing.T, l *lexer, expectedToken ircToken, expectedLiteral string) {
 	actualToken, actualLiteral := l.NextItem()
 	stringLiteral := string(actualLiteral)
 	if expectedToken != actualToken || expectedLiteral != stringLiteral {
