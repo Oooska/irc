@@ -8,7 +8,7 @@ import (
 //into a ParsedMessage
 //:PREFIX COMMAND ARG1 ARG2 :Last arg may have spaces if preceeded by colon
 //PREFIX is nick!user@host or servername, and is optional
-func ParseString(message string) (pm Message) {
+func parseString(message string) (pm Message) {
 	tokens := strings.Split(strings.TrimSpace(message), " ")
 	k := 0
 

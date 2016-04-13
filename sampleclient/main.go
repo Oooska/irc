@@ -46,7 +46,7 @@ func main() {
 	go readInput(client)
 
 	for { //Continuously read from the client until an error occurs
-		_, err := client.Next()
+		_, err := client.Read()
 		if err != nil {
 			fmt.Printf("ERROR: %s\n", err.Error())
 			fmt.Print("Exiting...")

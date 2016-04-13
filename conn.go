@@ -6,18 +6,34 @@ import (
 	"net"
 )
 
-/* Conn represents a connection to an IRC server. It provides
+/****The SSL implementation is currently insecure. ***
+
+Conn represents a connection to an IRC server. It provides
 methods to read, write and close a connection.
 
-A NewConnectionWrapper method is provided to allow you to provide
-your own implementation of net.Conn (e.g. for a websocket)
+MessageHandlers can be added to the Conn, and will be called anytime
+a message is sent or recieved if it matches the specified criteria.
 
-***The SSL implementation is currently insecure. *** */
+A NewConnectionWrapper method is provided to allow you to provide
+your own implementation of net.Conn (e.g. for a websocket)*/
 type Conn interface {
 	Read() (Message, error)
 	Write(Message) error
 	Close()
+
+	AddHandler(dir handlerDirection, mh MessageHandler, cmds ...string)
 }
+
+//MessageHandler are functions that will be called by a client upon
+//recieving a message that matches the supplied criteria.
+type MessageHandler func(Message)
+
+//handlerDirection represents the direction a handler should be triggered on
+type handlerDirection int
+
+const (
+	msgHandlerKey = "*" //key for general handler (triggered on all messages)
+)
 
 //NewConnection returns a new IRC Conn object
 //TODO: The SSL implementation is currently insecure.
@@ -39,22 +55,40 @@ func NewConnection(serverAddress string, useSSL bool) (Conn, error) {
 		return nil, err
 	}
 
-	return &conn{conn: c, buffconn: bufio.NewReader(c)}, nil
+	return &conn{
+		conn:             c,
+		buffconn:         bufio.NewReader(c),
+		incomingHandlers: make(map[string][]MessageHandler),
+		outgoingHandlers: make(map[string][]MessageHandler),
+	}, nil
 }
 
 //A very simple implementation of an IRC client
 type conn struct {
 	conn     net.Conn
 	buffconn *bufio.Reader
+
+	incomingHandlers map[string][]MessageHandler
+	outgoingHandlers map[string][]MessageHandler
 }
 
 //Read blocks until a new line is available from the server,
 //It returns a new Message or returns an error
 func (c *conn) Read() (msg Message, err error) {
 	line, err := c.buffconn.ReadString('\n')
-	if err == nil {
-		msg = NewMessage(line)
+	if err != nil {
+		return
 	}
+
+	msg = NewMessage(line)
+	for _, h := range c.incomingHandlers[msgHandlerKey] {
+		h(msg)
+	}
+
+	for _, h := range c.incomingHandlers[msg.Command] {
+		h(msg)
+	}
+
 	return
 }
 
@@ -62,6 +96,17 @@ func (c *conn) Read() (msg Message, err error) {
 //Returns an error if one occurs
 func (c *conn) Write(msg Message) error {
 	_, err := c.conn.Write([]byte(msg.String() + "\r\n"))
+
+	if err != nil {
+		for _, h := range c.outgoingHandlers[msgHandlerKey] {
+			h(msg)
+		}
+
+		for _, h := range c.outgoingHandlers[msg.Command] {
+			h(msg)
+		}
+	}
+
 	return err
 }
 
@@ -73,7 +118,37 @@ func (c *conn) Close() {
 	}
 }
 
+//Adds a MessageHandler function to the client. The supplied handler
+//will be called for all messages that are going in the specified direction
+//(inbound, outbound or both). If commands are specified, the handler will be
+//called only on those commands. If no commands are specified, the handler will
+//be called for all messages, regardless of the command.
+func (c *conn) AddHandler(dir handlerDirection, h MessageHandler, cmds ...string) {
+
+	if len(cmds) < 1 {
+		cmds = []string{msgHandlerKey}
+	}
+
+	if dir == Incoming || dir == Both {
+		for _, cmd := range cmds {
+			handlers := c.incomingHandlers[cmd]
+			c.incomingHandlers[cmd] = append(handlers, h)
+		}
+	}
+
+	if dir == Outgoing || dir == Both {
+		for _, cmd := range cmds {
+			handlers := c.outgoingHandlers[cmd]
+			c.outgoingHandlers[cmd] = append(handlers, h)
+		}
+	}
+}
+
 //NewConnectionWrapper provides a new IRC Conn object using the supplied net.Conn object
 func NewConnectionWrapper(c net.Conn) Conn {
-	return &conn{conn: c, buffconn: bufio.NewReader(c)}
+	return &conn{conn: c,
+		buffconn:         bufio.NewReader(c),
+		incomingHandlers: make(map[string][]MessageHandler),
+		outgoingHandlers: make(map[string][]MessageHandler),
+	}
 }

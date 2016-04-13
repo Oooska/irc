@@ -12,8 +12,16 @@ import (
 //ClientHandler is a function that attaches MessageHandlers to a client
 type ClientHandler func(Client)
 
+//LogHandler logs all messages to the default logger
+func LogHandler(client Client) {
+	handler := func(msg Message) {
+		log.Printf(msg.Message)
+	}
+	client.AddHandler(Both, handler)
+}
+
 //PingHandler registers a handler to respond to pings
-func PingHandler(client Client) {
+func pingHandler(client Client) {
 	handler := func(msg Message) {
 		resp := "PONG"
 		if len(msg.Params) > 0 {
@@ -26,17 +34,9 @@ func PingHandler(client Client) {
 	client.AddHandler(Incoming, handler, "PING")
 }
 
-//LogHandler logs all messages to the default logger
-func LogHandler(client Client) {
-	handler := func(msg Message) {
-		log.Printf(msg.Message)
-	}
-	client.AddHandler(Both, handler)
-}
-
 //Registers the channels handler to a fullclient, and sets the
 //channels object.
-func fcChannelHandler(client *fullClient) {
+func channelHandler(client *clientImpl) {
 	ch := RegisterChannelsHandler(client)
 	client.Channels = ch
 }
@@ -45,7 +45,7 @@ func fcChannelHandler(client *fullClient) {
 //Returns a Channels object.
 //TODO: Keep track of modes / other pertinent data
 //TODO: Listen for nick changes
-func RegisterChannelsHandler(client Client) Channels {
+func RegisterChannelsHandler(c Conn) Channels {
 	cul := newChannelUserList()
 	handler := func(msg Message) {
 		switch msg.Command {
@@ -77,7 +77,7 @@ func RegisterChannelsHandler(client Client) Channels {
 		case "QUIT":
 			if msg.Nick == "" {
 				//Client is quitting, empty channel list
-				for _, channel := range cul.Channels() {
+				for _, channel := range cul.ChannelNames() {
 					cul.Remove(channel)
 				}
 			} else {
@@ -86,6 +86,6 @@ func RegisterChannelsHandler(client Client) Channels {
 			}
 		}
 	}
-	client.AddHandler(Both, handler, "JOIN", "PART", "KICK", "QUIT")
+	c.AddHandler(Both, handler, "JOIN", "PART", "KICK", "QUIT")
 	return Channels(cul)
 }

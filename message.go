@@ -43,7 +43,7 @@ func (msg Message) String() string {
 
 //NewMessage takes a string representing a command and parses it
 func NewMessage(msg string) Message {
-	return ParseString(msg)
+	return parseString(msg)
 }
 
 //UserMessage returns a parsed User message

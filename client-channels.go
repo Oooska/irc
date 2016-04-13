@@ -5,18 +5,14 @@ import (
 	"sort"
 )
 
+//ErrChannelDNE is returned when the specified channel does not exist
 var ErrChannelDNE = errors.New("Channel Does Not Exist")
 
 //Channels represents the list of channels the client is currently
-//connected to, and the use
+//connected to, and the users present in those channels
 type Channels interface {
-	Add(channel string)
-	Remove(channel string)
-	UserJoins(channel, nick string) error
-	UserParts(channel, nick string) error
-	UserQuits(nick string)
 	Users(channel string) (users []string, err error)
-	Channels() (channels []string)
+	ChannelNames() (channels []string)
 	NumChannels() int
 }
 
@@ -96,7 +92,7 @@ func (cul channelUserList) NumChannels() int {
 }
 
 //Returns a sorted list of channels
-func (cul channelUserList) Channels() []string {
+func (cul channelUserList) ChannelNames() []string {
 	channels := make([]string, len(cul))
 	k := 0
 	for key := range cul {

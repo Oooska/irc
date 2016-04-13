@@ -15,7 +15,7 @@ func TestChannelUserList_channels(t *testing.T) {
 		t.Errorf("A newly created channelUserList is suppose to be empty, but has length %d", cul.NumChannels())
 	}
 
-	channels := cul.Channels()
+	channels := cul.ChannelNames()
 	if len(channels) != 0 {
 		t.Errorf("A new created channelUserList does not return an empty slice of channel names. Found %d", len(channels))
 	}
@@ -32,7 +32,7 @@ func TestChannelUserList_channels(t *testing.T) {
 		t.Errorf("Adding a channel does not increase the number of channels. Expected: 3, found: %d", cul.NumChannels())
 	}
 
-	channels = cul.Channels()
+	channels = cul.ChannelNames()
 	if channels[0] != "#test" || channels[1] != "#test2" || channels[2] != "#test3" {
 		t.Errorf(`Channels() did not return the correct channel names in alphabetical order. `+
 			` Expected: ["#test", "#test1", "#test2"], Received: %+v`, channels)
@@ -43,7 +43,7 @@ func TestChannelUserList_channels(t *testing.T) {
 		t.Errorf("Remove() did not remove the requested item. Expected 2 items, found %d", cul.NumChannels())
 	}
 
-	channels = cul.Channels()
+	channels = cul.ChannelNames()
 	if channels[0] != "#test" || channels[1] != "#test3" {
 		t.Errorf(`Channels() did not return the correct channel names in alphabetical order. `+
 			` Expected: ["#test", "#test3"], Received: %+v`, channels)
@@ -54,7 +54,7 @@ func TestChannelUserList_channels(t *testing.T) {
 		t.Errorf("Remove() did not remove the requested item. Expected 2 items, found %d", cul.NumChannels())
 	}
 
-	channels = cul.Channels()
+	channels = cul.ChannelNames()
 	if channels[0] != "#test3" {
 		t.Errorf(`Channels() did not return the correct channel names in alphabetical order. `+
 			` Expected: [#test3"], Received: %+v`, channels)
