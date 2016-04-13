@@ -8,11 +8,6 @@ const (
 //recieving a message that matches the supplied criteria. 
 type MessageHandler func(Message)
 
-<<<<<<< HEAD
-=======
-//ClientHandlers are functions that attach handlers to a client
-type ClientHandler func(Client)
->>>>>>> c5ebd96e6812c01a811260abab2dd73fa51b81e8
 
 //LiteClient interface provides a barebones client to send/recieved
 //messages, and allows you to add MessageHandlers
