@@ -7,7 +7,7 @@ import (
 )
 
 /* Conn represents a connection to an IRC server. It provides
-methods to read, write and close a connection. 
+methods to read, write and close a connection.
 
 A NewConnectionWrapper method is provided to allow you to provide
 your own implementation of net.Conn (e.g. for a websocket)
@@ -40,7 +40,7 @@ func NewConnection(serverAddress string, useSSL bool) (Conn, error) {
 	}
 
 	return &conn{conn: c, buffconn: bufio.NewReader(c)}, nil
-} 
+}
 
 //A very simple implementation of an IRC client
 type conn struct {
@@ -55,25 +55,25 @@ func (c *conn) Read() (msg Message, err error) {
 	if err == nil {
 		msg = NewMessage(line)
 	}
-    return
+	return
 }
 
 //Writes the message to the server.
 //Returns an error if one occurs
 func (c *conn) Write(msg Message) error {
-	_, err := c.conn.Write([]byte(msg.String()+"\r\n"))
+	_, err := c.conn.Write([]byte(msg.String() + "\r\n"))
 	return err
 }
 
-//Closes the connection to the server. It does not send  
+//Closes the connection to the server. It does not send
 //a quit command.
 func (c *conn) Close() {
-    if c != nil{
-	    c.conn.Close()
-    }
+	if c != nil {
+		c.conn.Close()
+	}
 }
 
 //NewConnectionWrapper provides a new IRC Conn object using the supplied net.Conn object
 func NewConnectionWrapper(c net.Conn) Conn {
-    return &conn{conn: c, buffconn: bufio.NewReader(c)}
+	return &conn{conn: c, buffconn: bufio.NewReader(c)}
 }

@@ -28,55 +28,54 @@ func main() {
 
 	fmt.Print("Simple Text-Based IRC Test Client\n\n")
 
-    fmt.Printf("Connecting to %s . . . \n", *address)
-    
-    //LogClientHandler will handle printing out to stdio unless we change the default logger
-    client, err := irc.NewClient(*address, *ssl, irc.LogHandler)
-    
+	fmt.Printf("Connecting to %s . . . \n", *address)
+
+	//LogClientHandler will handle printing out to stdio unless we change the default logger
+	client, err := irc.NewClient(*address, *ssl, irc.LogHandler)
+
 	if err != nil {
 		log.Fatalf("Error: %s", err.Error())
 	}
-    fmt.Print("Connected.\n\n")
-    
-    client.Send(irc.UserMessage(*username, "host", "domain", "realname"))
-    client.Send(irc.NickMessage(*nick))
-    client.Send(irc.JoinMessage("#go_test"))
+	fmt.Print("Connected.\n\n")
 
+	client.Send(irc.UserMessage(*username, "host", "domain", "realname"))
+	client.Send(irc.NickMessage(*nick))
+	client.Send(irc.JoinMessage("#go_test"))
 
-    //Listen for input.
-    go readInput(client)
+	//Listen for input.
+	go readInput(client)
 
-    for { //Continuously read from the client until an error occurs
-        _, err := client.Next()
-        if err != nil {
-            fmt.Printf("ERROR: %s\n", err.Error())
-            fmt.Print("Exiting...")
-            return
-        }
-    }
+	for { //Continuously read from the client until an error occurs
+		_, err := client.Next()
+		if err != nil {
+			fmt.Printf("ERROR: %s\n", err.Error())
+			fmt.Print("Exiting...")
+			return
+		}
+	}
 }
 
-//readInput continuously reads line from stdin. 
-func readInput(client irc.Client){
-    reader := bufio.NewReader(os.Stdin)
-    for {
-        line, err := reader.ReadString('\n')
-        if err != nil {
-            log.Fatalf("Cannot read from stdin: %s", err.Error())
-        }
+//readInput continuously reads line from stdin.
+func readInput(client irc.Client) {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatalf("Cannot read from stdin: %s", err.Error())
+		}
 
-        line = strings.TrimSpace(line)
-        if len(line) == 0 {
-            continue
-        }
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
 
-        msg, err := parseLine(line)
-        if err != nil {
-            log.Printf("Err: %s\n", err.Error())
-        } else {
-            client.Send(msg)
-        }
-    }    
+		msg, err := parseLine(line)
+		if err != nil {
+			log.Printf("Err: %s\n", err.Error())
+		} else {
+			client.Send(msg)
+		}
+	}
 }
 
 //parseLine returns an irc.Message object. If the line starts with a forward
