@@ -3,6 +3,7 @@ package irc
 import (
     "log"
 )
+<<<<<<< HEAD
 
 
 /* Client Handlers are functions that add useful functionality to
@@ -13,6 +14,8 @@ import (
 //ClientHandler is a function that attaches MessageHandlers to a client
 type ClientHandler func(Client)
 
+=======
+>>>>>>> c5ebd96e6812c01a811260abab2dd73fa51b81e8
 
 //PingHandler registers a handler to respond to pings
 func PingHandler(client Client){
@@ -37,8 +40,11 @@ func LogHandler(client Client){
 }
 
 
+<<<<<<< HEAD
 //Registers the channels handler to a fullclient, and sets the
 //channels object.
+=======
+>>>>>>> c5ebd96e6812c01a811260abab2dd73fa51b81e8
 func fcChannelHandler(client *fullClient){
     ch := RegisterChannelsHandler(client)
     client.Channels = ch
@@ -49,6 +55,10 @@ func fcChannelHandler(client *fullClient){
 //TODO: Keep track of modes / other pertinent data
 //TODO: Listen for nick changes
 func RegisterChannelsHandler(client Client) Channels {
+<<<<<<< HEAD
+=======
+  //Will use channelUserList in client-structs to implement
+>>>>>>> c5ebd96e6812c01a811260abab2dd73fa51b81e8
   cul := newChannelUserList()
   handler := func(msg Message){
       switch(msg.Command){
