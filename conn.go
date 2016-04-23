@@ -84,7 +84,7 @@ func (c *conn) Read() (msg Message, err error) {
 	ok := c.scanner.Scan()
 	if !ok {
 		err = c.scanner.Err()
-		if err == nil {
+		if err == nil { //Scanner doesn't return EOF
 			err = io.EOF
 		}
 		return
