@@ -3,6 +3,7 @@ package irc
 import (
 	"bufio"
 	"crypto/tls"
+	"io"
 	"net"
 )
 
@@ -45,7 +46,6 @@ func NewConnection(serverAddress string, useSSL bool) (Conn, error) {
 		conf := tls.Config{ //TODO: Fix insecure SSL connection
 			InsecureSkipVerify: true,
 		}
-
 		c, err = tls.Dial("tcp", serverAddress, &conf)
 	} else {
 		c, err = net.Dial("tcp", serverAddress)
@@ -55,18 +55,24 @@ func NewConnection(serverAddress string, useSSL bool) (Conn, error) {
 		return nil, err
 	}
 
-	return &conn{
-		conn:             c,
-		buffconn:         bufio.NewReader(c),
+	return NewConnectionWrapper(c), nil
+}
+
+//NewConnectionWrapper provides a new IRC Conn object using
+//the specified input stream. Useful for websockets or other
+//connectivity methods
+func NewConnectionWrapper(c io.ReadWriteCloser) Conn {
+	return &conn{conn: c,
+		scanner:          bufio.NewScanner(c),
 		incomingHandlers: make(map[string][]MessageHandler),
 		outgoingHandlers: make(map[string][]MessageHandler),
-	}, nil
+	}
 }
 
 //A very simple implementation of an IRC client
 type conn struct {
-	conn     net.Conn
-	buffconn *bufio.Reader
+	conn    io.ReadWriteCloser
+	scanner *bufio.Scanner
 
 	incomingHandlers map[string][]MessageHandler
 	outgoingHandlers map[string][]MessageHandler
@@ -75,11 +81,15 @@ type conn struct {
 //Read blocks until a new line is available from the server,
 //It returns a new Message or returns an error
 func (c *conn) Read() (msg Message, err error) {
-	line, err := c.buffconn.ReadString('\n')
-	if err != nil {
+	ok := c.scanner.Scan()
+	if !ok {
+		err = c.scanner.Err()
+		if err == nil {
+			err = io.EOF
+		}
 		return
 	}
-
+	line := c.scanner.Text()
 	msg = NewMessage(line)
 	for _, h := range c.incomingHandlers[msgHandlerKey] {
 		h(msg)
@@ -97,7 +107,7 @@ func (c *conn) Read() (msg Message, err error) {
 func (c *conn) Write(msg Message) error {
 	_, err := c.conn.Write([]byte(msg.String() + "\r\n"))
 
-	if err != nil {
+	if err == nil {
 		for _, h := range c.outgoingHandlers[msgHandlerKey] {
 			h(msg)
 		}
@@ -124,7 +134,6 @@ func (c *conn) Close() {
 //called only on those commands. If no commands are specified, the handler will
 //be called for all messages, regardless of the command.
 func (c *conn) AddHandler(dir handlerDirection, h MessageHandler, cmds ...string) {
-
 	if len(cmds) < 1 {
 		cmds = []string{msgHandlerKey}
 	}
@@ -141,14 +150,5 @@ func (c *conn) AddHandler(dir handlerDirection, h MessageHandler, cmds ...string
 			handlers := c.outgoingHandlers[cmd]
 			c.outgoingHandlers[cmd] = append(handlers, h)
 		}
-	}
-}
-
-//NewConnectionWrapper provides a new IRC Conn object using the supplied net.Conn object
-func NewConnectionWrapper(c net.Conn) Conn {
-	return &conn{conn: c,
-		buffconn:         bufio.NewReader(c),
-		incomingHandlers: make(map[string][]MessageHandler),
-		outgoingHandlers: make(map[string][]MessageHandler),
 	}
 }
