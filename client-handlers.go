@@ -1,8 +1,6 @@
 package irc
 
-import (
-	"log"
-)
+import "log"
 
 /* Client Handlers are functions that add useful functionality to
    a irc.Client. They do this by attaching MessageHandlers to the
@@ -18,6 +16,20 @@ func LogHandler(client Client) {
 		log.Printf(msg.Message)
 	}
 	client.AddHandler(Both, handler)
+}
+
+func conversationHandler(client *clientImpl) {
+	convo := RegisterConversationsHandler(client)
+	client.Conversations = convo
+}
+
+func RegisterConversationsHandler(c Conn) Conversations {
+	convos := newConversations(1024)
+	handler := func(msg Message) {
+		convos.Add(msg.Params[0], msg.Message)
+	}
+	c.AddHandler(Both, handler, "PRIVMSG")
+	return convos
 }
 
 //PingHandler registers a handler to respond to pings

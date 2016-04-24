@@ -7,6 +7,7 @@ type Client interface {
 	Send(...Message) (int, error)
 	Conn
 	Channels
+	Conversations
 }
 
 const (
@@ -28,6 +29,7 @@ func NewClient(serverAddress string, useSSL bool, handlers ...ClientHandler) (Cl
 		Conn: conn,
 	}
 	channelHandler(&c)
+	conversationHandler(&c)
 	pingHandler(&c)
 
 	for _, h := range handlers {
@@ -41,6 +43,7 @@ func NewClient(serverAddress string, useSSL bool, handlers ...ClientHandler) (Cl
 type clientImpl struct {
 	Conn
 	Channels
+	Conversations
 }
 
 //Send sends all of the supplied messages to the server.
