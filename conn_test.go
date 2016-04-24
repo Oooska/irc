@@ -144,13 +144,6 @@ func TestHandlers(t *testing.T) {
 		t.Errorf("Unable to connect to IRC server.")
 	}
 
-	go func() {
-		lconn, _ := l.Accept()
-		lconn.Write([]byte("Response 1\r\n"))
-		lconn.Write([]byte("DiffResponse 2\r\n"))
-		lconn.Close()
-	}()
-
 	ircConn.AddHandler(Incoming, func(msg Message) {
 		incomingOnAll++
 	})
@@ -174,6 +167,12 @@ func TestHandlers(t *testing.T) {
 	ircConn.AddHandler(Both, func(msg Message) {
 		bothOnMessage++
 	}, "Message", "Response")
+
+	go func() {
+		lconn, _ := l.Accept()
+		lconn.Write([]byte("Response 1\r\n"))
+		lconn.Write([]byte("DiffResponse 2\r\n"))
+	}()
 
 	ircConn.Write(NewMessage("Message 1"))
 	ircConn.Read()
