@@ -3,6 +3,7 @@ package irc
 import (
 	"errors"
 	"sort"
+	"sync"
 )
 
 //ErrChannelDNE is returned when the specified channel does not exist
@@ -20,28 +21,35 @@ type Channels interface {
 //The key is the username, the value is there mode.
 type userList map[string]string
 
-//channelUserList is a map of room names to userLists
-type channelUserList map[string]userList
+type channels struct {
+	m     map[string]userList
+	mLock *sync.RWMutex
+}
 
-func newChannelUserList() channelUserList {
-	cul := make(channelUserList)
-	return cul
+func newChannels() channels {
+	return channels{m: make(map[string]userList), mLock: new(sync.RWMutex)}
 }
 
 //Creates an empty channel.
-func (cul channelUserList) Add(channel string) {
-	cul[channel] = make(userList)
+func (c channels) Add(channel string) {
+	c.mLock.Lock()
+	c.m[channel] = make(userList)
+	c.mLock.Unlock()
 }
 
 //Removes a channel
-func (cul channelUserList) Remove(channel string) {
-	delete(cul, channel)
+func (c channels) Remove(channel string) {
+	c.mLock.Lock()
+	delete(c.m, channel)
+	c.mLock.Unlock()
 }
 
 //Adds the specified user to the specified channel.
 //Returns ErrChannelDNE if channel does not exist
-func (cul channelUserList) UserJoins(channel, user string) error {
-	ul, ok := cul[channel]
+func (c channels) UserJoins(channel, user string) error {
+	c.mLock.Lock()
+	defer c.mLock.Unlock()
+	ul, ok := c.m[channel]
 	if ok {
 		ul[user] = ""
 		return nil
@@ -52,27 +60,34 @@ func (cul channelUserList) UserJoins(channel, user string) error {
 
 //Removes the specified user from the specified channel.
 //Returns ErrChannelDNE if room does not exist
-func (cul channelUserList) UserParts(channel, user string) error {
-	ul, ok := cul[channel]
+func (c channels) UserParts(channel, user string) error {
+	c.mLock.Lock()
+	defer c.mLock.Unlock()
+	ul, ok := c.m[channel]
 	if ok {
 		delete(ul, user)
 		return nil
 	}
+
 	return ErrChannelDNE
 }
 
 //Removes the specified user from all channels
-func (cul channelUserList) UserQuits(user string) {
-	for _, ul := range cul {
+func (c channels) UserQuits(user string) {
+	c.mLock.Lock()
+	for _, ul := range c.m {
 		delete(ul, user)
 	}
+	c.mLock.Unlock()
 }
 
 //Returns a sorted slice containing the users in a given channel.
 //Returns an empty slice if no channel exists
 //The bool value is true if the room exists, false otherwise
-func (cul channelUserList) Users(channel string) ([]string, error) {
-	ch, ok := cul[channel]
+func (c channels) Users(channel string) ([]string, error) {
+	c.mLock.RLock()
+	defer c.mLock.RUnlock()
+	ch, ok := c.m[channel]
 	if ok {
 		users := make([]string, len(ch))
 		k := 0
@@ -87,18 +102,23 @@ func (cul channelUserList) Users(channel string) ([]string, error) {
 }
 
 //Returns the number of open channels
-func (cul channelUserList) NumChannels() int {
-	return len(cul)
+func (c channels) NumChannels() int {
+	c.mLock.RLock()
+	l := len(c.m)
+	c.mLock.RUnlock()
+	return l
 }
 
 //Returns a sorted list of channels
-func (cul channelUserList) ChannelNames() []string {
-	channels := make([]string, len(cul))
+func (c channels) ChannelNames() []string {
+	c.mLock.RLock()
+	channels := make([]string, len(c.m))
 	k := 0
-	for key := range cul {
+	for key := range c.m {
 		channels[k] = key
 		k++
 	}
+	c.mLock.RUnlock()
 	sort.Strings(channels)
 	return channels
 }

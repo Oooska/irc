@@ -9,7 +9,7 @@ import (
 
 //Test adding/removing channels using channelUserList
 func TestChannelUserList_channels(t *testing.T) {
-	cul := newChannelUserList()
+	cul := newChannels()
 
 	if cul.NumChannels() != 0 {
 		t.Errorf("A newly created channelUserList is suppose to be empty, but has length %d", cul.NumChannels())
@@ -68,7 +68,7 @@ func TestChannelUserList_channels(t *testing.T) {
 
 //Tests adding/removing users from specified channels
 func TestChannelUserList_users(t *testing.T) {
-	cul := newChannelUserList()
+	cul := newChannels()
 
 	users, err := cul.Users("#no-such-channel-exists")
 	if err == nil || len(users) != 0 {

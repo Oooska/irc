@@ -46,7 +46,7 @@ func channelHandler(client *clientImpl) {
 //TODO: Keep track of modes / other pertinent data
 //TODO: Listen for nick changes
 func RegisterChannelsHandler(c Conn) Channels {
-	cul := newChannelUserList()
+	cul := newChannels()
 	handler := func(msg Message) {
 		switch msg.Command {
 		case "JOIN":
