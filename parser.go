@@ -19,10 +19,10 @@ func parseString(message string) (pm Message) {
 		k++
 	}
 
-	//Parse command, ignoring empty tokens
+	//Parse command (making it uppercase), ignoring empty tokens
 	for ; k < len(tokens); k++ {
 		if tokens[k] != "" {
-			pm.Command = tokens[k]
+			pm.Command = strings.ToUpper(tokens[k])
 			k++
 			break
 		}

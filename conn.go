@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"io"
 	"net"
+	"strings"
 )
 
 /****The SSL implementation is currently insecure. ***
@@ -140,6 +141,7 @@ func (c *conn) AddHandler(dir handlerDirection, h MessageHandler, cmds ...string
 
 	if dir == Incoming || dir == Both {
 		for _, cmd := range cmds {
+			cmd = strings.ToUpper(cmd)
 			handlers := c.incomingHandlers[cmd]
 			c.incomingHandlers[cmd] = append(handlers, h)
 		}
@@ -147,6 +149,7 @@ func (c *conn) AddHandler(dir handlerDirection, h MessageHandler, cmds ...string
 
 	if dir == Outgoing || dir == Both {
 		for _, cmd := range cmds {
+			cmd = strings.ToUpper(cmd)
 			handlers := c.outgoingHandlers[cmd]
 			c.outgoingHandlers[cmd] = append(handlers, h)
 		}
