@@ -46,12 +46,14 @@ func (c channels) Remove(channel string) {
 
 //Adds the specified user to the specified channel.
 //Returns ErrChannelDNE if channel does not exist
-func (c channels) UserJoins(channel, user string) error {
+func (c channels) UserJoins(channel string, users ...string) error {
 	c.mLock.Lock()
 	defer c.mLock.Unlock()
 	ul, ok := c.m[channel]
 	if ok {
-		ul[user] = ""
+		for _, user := range users {
+			ul[user] = ""
+		}
 		return nil
 	}
 

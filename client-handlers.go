@@ -1,6 +1,10 @@
 package irc
 
-import "log"
+import (
+	"log"
+	"strings"
+	"sync"
+)
 
 /* Client Handlers are functions that add useful functionality to
    a irc.Client. They do this by attaching MessageHandlers to the
@@ -9,6 +13,11 @@ import "log"
 
 //ClientHandler is a function that attaches MessageHandlers to a client
 type ClientHandler func(Client)
+
+const (
+	rplName       = "353"
+	rplEndofNames = "366"
+)
 
 //LogHandler logs all messages to the default logger
 func LogHandler(client Client) {
@@ -59,6 +68,8 @@ func channelHandler(client *clientImpl) {
 //TODO: Listen for nick changes
 func RegisterChannelsHandler(c Conn) Channels {
 	cul := newChannels()
+	namesUpdating := make(map[string]bool) //Keeps track of rplName/rplEndofNames
+	namesUpdatingLock := new(sync.Mutex)
 	handler := func(msg Message) {
 		switch msg.Command() {
 		case "JOIN":
@@ -96,8 +107,34 @@ func RegisterChannelsHandler(c Conn) Channels {
 				//User is quitting
 				cul.UserQuits(msg.Nick())
 			}
+
+		case rplName: //List of nicks in the specified channel
+			//:tepper.freenode.net 353 nick @ #gotest :goirctest @Oooska
+			namesUpdatingLock.Lock()
+			defer namesUpdatingLock.Unlock()
+			if len(msg.Params()) >= 3 {
+				ch := msg.Params()[2]
+				updating, _ := namesUpdating[ch]
+				if !updating {
+					//Resetting userlist for channel
+					cul.Remove(ch)
+					cul.Add(ch)
+					namesUpdating[ch] = true
+				}
+				names := strings.Split(msg.Trailing(), " ")
+				cul.UserJoins(ch, names...)
+			}
+		case rplEndofNames:
+			//:tepper.freenode.net 366 goirctest #gotest :End of /NAMES list.
+			namesUpdatingLock.Lock()
+			defer namesUpdatingLock.Unlock()
+			if len(msg.Params()) >= 2 {
+				ch := msg.Params()[1]
+				delete(namesUpdating, ch)
+			}
 		}
 	}
 	c.AddHandler(Both, handler, "JOIN", "PART", "KICK", "QUIT")
+	c.AddHandler(Incoming, handler, rplName, rplEndofNames)
 	return Channels(cul)
 }
