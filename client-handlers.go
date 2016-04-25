@@ -13,7 +13,7 @@ type ClientHandler func(Client)
 //LogHandler logs all messages to the default logger
 func LogHandler(client Client) {
 	handler := func(msg Message) {
-		log.Printf(msg.Message)
+		log.Printf(msg.Message())
 	}
 	client.AddHandler(Both, handler)
 }
@@ -26,7 +26,7 @@ func conversationHandler(client *clientImpl) {
 func RegisterConversationsHandler(c Conn) Conversations {
 	convos := newConversations(1024)
 	handler := func(msg Message) {
-		convos.Add(msg.Params[0], msg.Message)
+		convos.Add(msg.Params()[0], msg.Message())
 	}
 	c.AddHandler(Both, handler, "PRIVMSG")
 	return convos
@@ -36,8 +36,8 @@ func RegisterConversationsHandler(c Conn) Conversations {
 func pingHandler(client Client) {
 	handler := func(msg Message) {
 		resp := "PONG"
-		if len(msg.Params) > 0 {
-			resp += " " + msg.Params[0]
+		if len(msg.Params()) > 0 {
+			resp += " " + msg.Params()[0]
 		}
 
 		client.Send(NewMessage(resp))
@@ -60,41 +60,41 @@ func channelHandler(client *clientImpl) {
 func RegisterChannelsHandler(c Conn) Channels {
 	cul := newChannels()
 	handler := func(msg Message) {
-		switch msg.Command {
+		switch msg.Command() {
 		case "JOIN":
-			if len(msg.Params) > 0 {
-				if msg.Nick == "" {
+			if len(msg.Params()) > 0 {
+				if msg.Nick() == "" {
 					//JOIN #room
-					cul.Add(msg.Params[0])
+					cul.Add(msg.Params()[0])
 				} else {
 					//nick JOIN #room
-					cul.UserJoins(msg.Params[0], msg.Nick)
+					cul.UserJoins(msg.Params()[0], msg.Nick())
 				}
 			} //else malformed request - ignoring
 		case "PART":
-			if len(msg.Params) > 0 {
-				if msg.Nick == "" {
+			if len(msg.Params()) > 0 {
+				if msg.Nick() == "" {
 					//PART #room
-					cul.Remove(msg.Params[0])
+					cul.Remove(msg.Params()[0])
 				} else {
 					//nick PART #channel :reason
-					cul.UserParts(msg.Params[0], msg.Nick)
+					cul.UserParts(msg.Params()[0], msg.Nick())
 				}
 			} //else malformed request - ignoring
 		case "KICK":
-			if msg.Nick != "" && len(msg.Params) > 0 {
-				cul.UserParts(msg.Params[0], msg.Nick)
+			if msg.Nick() != "" && len(msg.Params()) > 0 {
+				cul.UserParts(msg.Params()[0], msg.Nick())
 				//TODO: Determine if it was the client that got kicked
 			}
 		case "QUIT":
-			if msg.Nick == "" {
+			if msg.Nick() == "" {
 				//Client is quitting, empty channel list
 				for _, channel := range cul.ChannelNames() {
 					cul.Remove(channel)
 				}
 			} else {
 				//User is quitting
-				cul.UserQuits(msg.Nick)
+				cul.UserQuits(msg.Nick())
 			}
 		}
 	}

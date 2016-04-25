@@ -96,7 +96,7 @@ func (c *conn) Read() (msg Message, err error) {
 		h(msg)
 	}
 
-	for _, h := range c.incomingHandlers[msg.Command] {
+	for _, h := range c.incomingHandlers[msg.Command()] {
 		h(msg)
 	}
 
@@ -113,7 +113,7 @@ func (c *conn) Write(msg Message) error {
 			h(msg)
 		}
 
-		for _, h := range c.outgoingHandlers[msg.Command] {
+		for _, h := range c.outgoingHandlers[msg.Command()] {
 			h(msg)
 		}
 	}

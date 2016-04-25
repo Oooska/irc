@@ -61,7 +61,7 @@ func TestRead(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error returned while reading from server: %s", err.Error())
 	}
-	if msg.Message != "Message 1" {
+	if msg.Message() != "Message 1" {
 		t.Errorf(`Read() did not return the expected message. Expected: "Message 1", Received: "%s"`, msg.Message)
 	}
 
@@ -69,7 +69,7 @@ func TestRead(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error returned while reading from server: %s", err.Error())
 	}
-	if msg.Message != "Message 2" {
+	if msg.Message() != "Message 2" {
 		t.Errorf(`Read() did not return the expected message. Expected: "Message 2", Received: "%s"`, msg.Message)
 	}
 
