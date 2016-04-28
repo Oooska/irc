@@ -32,6 +32,9 @@ func conversationHandler(client *clientImpl) {
 	client.Conversations = convo
 }
 
+//RegisterConversationsHandler registers the conversation handler
+//with the connection and returns a Conversations object to access
+//captured data.
 func RegisterConversationsHandler(c Conn) Conversations {
 	convos := newConversations(1024)
 	handler := func(msg Message) {
@@ -77,6 +80,11 @@ func RegisterChannelsHandler(c Conn) Channels {
 				if msg.Nick() == "" {
 					//JOIN #room
 					cul.Add(msg.Params()[0])
+
+					//ANeed to note that a /names update is coming for this channel
+					namesUpdatingLock.Lock()
+					namesUpdating[msg.Params()[0]] = true
+					namesUpdatingLock.Unlock()
 				} else {
 					//nick JOIN #room
 					cul.UserJoins(msg.Params()[0], msg.Nick())
@@ -107,7 +115,14 @@ func RegisterChannelsHandler(c Conn) Channels {
 				//User is quitting
 				cul.UserQuits(msg.Nick())
 			}
-
+		case "NAMES":
+			if len(msg.Params()) >= 1 {
+				//ANeed to node that a /names update is coming for this channel
+				namesUpdatingLock.Lock()
+				namesUpdating[msg.Params()[0]] = true
+				namesUpdatingLock.Unlock()
+			} //else /names will report list of ALL public channels.
+			//TODO: Show user list of all public channels.
 		case rplName: //List of nicks in the specified channel
 			//:tepper.freenode.net 353 nick @ #gotest :goirctest @Oooska
 			namesUpdatingLock.Lock()
@@ -115,14 +130,13 @@ func RegisterChannelsHandler(c Conn) Channels {
 			if len(msg.Params()) >= 3 {
 				ch := msg.Params()[2]
 				updating, _ := namesUpdating[ch]
-				if !updating {
-					//Resetting userlist for channel
-					cul.Remove(ch)
-					cul.Add(ch)
-					namesUpdating[ch] = true
+				if updating {
+					//Only update names if we're requesting the info
+					//from a /names #channel or /join command
+					names := strings.Split(msg.Trailing(), " ")
+					cul.UserJoins(ch, names...)
 				}
-				names := strings.Split(msg.Trailing(), " ")
-				cul.UserJoins(ch, names...)
+
 			}
 		case rplEndofNames:
 			//:tepper.freenode.net 366 goirctest #gotest :End of /NAMES list.
@@ -134,7 +148,7 @@ func RegisterChannelsHandler(c Conn) Channels {
 			}
 		}
 	}
-	c.AddHandler(Both, handler, "JOIN", "PART", "KICK", "QUIT")
+	c.AddHandler(Both, handler, "JOIN", "PART", "KICK", "QUIT", "NAMES")
 	c.AddHandler(Incoming, handler, rplName, rplEndofNames)
 	return Channels(cul)
 }

@@ -1,9 +1,6 @@
 package irc
 
-import (
-	"strings"
-	"time"
-)
+import "strings"
 
 //ParseString string takes a raw irc command and parses it
 //into a ParsedMessage
@@ -14,7 +11,6 @@ func parseString(message string) (pm message) {
 	k := 0
 
 	pm.parsed = true
-	pm.timestamp = time.Now()
 	pm.message = message
 
 	//Check for prefix

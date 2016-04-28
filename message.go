@@ -5,6 +5,42 @@ import (
 	"time"
 )
 
+//NewMessage takes a string representing a command and parses it
+//Timestamp is set to time.Now()
+func NewMessage(msg string) Message {
+	pmsg := parseString(msg)
+	pmsg.timestamp = time.Now()
+	return pmsg
+}
+
+//MessageWithTimestamp returns a Message with the specified timestamp.
+func MessageWithTimestamp(msg string, ts time.Time) Message {
+	pmsg := parseString(msg)
+	pmsg.timestamp = ts
+	return pmsg
+}
+
+//UserMessage returns a parsed User message
+func UserMessage(username, addr, servername, realname string) Message {
+	return NewMessage(fmt.Sprintf("USER %s %s %s %s", username, addr, servername, realname))
+}
+
+//NickMessage returns a parsed Nick message
+func NickMessage(nick string) Message {
+	return NewMessage("NICK " + nick)
+}
+
+//PrivMessage returns a parsed PRIVMSG command
+func PrivMessage(channel, msg string) Message {
+	return NewMessage(fmt.Sprintf("PRIVMSG %s :%s", channel, msg))
+}
+
+//JoinMessage returns a parsed JOIN command
+func JoinMessage(channel string) Message {
+	return NewMessage("JOIN " + channel)
+}
+
+//Message represents a Message sent between the client and server
 type Message interface {
 	Message() string
 	Prefix() string
@@ -108,28 +144,4 @@ func (m message) Timestamp() time.Time {
 //String returns the entire message (identical to calling Message())
 func (m message) String() string {
 	return m.Message()
-}
-
-//NewMessage takes a string representing a command and parses it
-func NewMessage(msg string) Message {
-	return parseString(msg)
-}
-
-//UserMessage returns a parsed User message
-func UserMessage(username, addr, servername, realname string) Message {
-	return NewMessage(fmt.Sprintf("USER %s %s %s %s", username, addr, servername, realname))
-}
-
-//NickMessage returns a parsed Nick message
-func NickMessage(nick string) Message {
-	return NewMessage("NICK " + nick)
-}
-
-//PrivMessage returned a parsed PRIVMSG command
-func PrivMessage(channel, msg string) Message {
-	return NewMessage(fmt.Sprintf("PRIVMSG %s :%s", channel, msg))
-}
-
-func JoinMessage(channel string) Message {
-	return NewMessage("JOIN " + channel)
 }
